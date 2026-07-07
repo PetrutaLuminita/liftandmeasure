@@ -1,0 +1,196 @@
+---
+import ToolLayout from '../layouts/ToolLayout.astro';
+
+const title = 'TDEE and BMR Calculator | Lift and Measure';
+const description =
+  'Calculate your basal metabolic rate (BMR) and total daily energy expenditure (TDEE) using the Mifflin-St Jeor equation and standard activity multipliers.';
+const summary =
+  'Enter your sex, age, height, weight, and activity level to get your basal metabolic rate (calories burned at rest) and total daily energy expenditure (calories burned including activity).';
+
+const faq = [
+  {
+    question: 'What is the difference between BMR and TDEE?',
+    answer:
+      'BMR is the number of calories your body burns at complete rest just to keep essential functions running, like breathing and circulation. TDEE adds your daily activity on top of that, so it is always equal to or higher than BMR.',
+  },
+  {
+    question: 'Which number should I use to plan my calorie intake?',
+    answer:
+      'Use TDEE, since it already accounts for your activity level. Eating at your TDEE tends to maintain weight, eating below it tends to cause weight loss, and eating above it tends to cause weight gain.',
+  },
+  {
+    question: 'Why does this calculator use the Mifflin-St Jeor equation?',
+    answer:
+      'It is one of the most widely validated equations for estimating BMR in the general population and tends to be more accurate than older formulas like Harris-Benedict for most people.',
+  },
+  {
+    question: 'How do I pick the right activity level?',
+    answer:
+      'Sedentary means little or no exercise. Lightly active means light exercise 1 to 3 days a week. Moderately active means moderate exercise 3 to 5 days a week. Very active means hard exercise 6 to 7 days a week. Extra active means very hard exercise or a physically demanding job on top of training.',
+  },
+  {
+    question: 'Does this account for muscle mass or body fat percentage?',
+    answer:
+      'No. The Mifflin-St Jeor equation only uses weight, height, age, and sex, so it does not separately account for how much of your weight is muscle versus fat. It is still one of the more reliable general-purpose formulas available without more detailed body composition data.',
+  },
+  {
+    question: 'How accurate is this estimate?',
+    answer:
+      'Formula-based estimates are generally within about 10 percent of measured energy expenditure for most people, but individual metabolism varies. Track your weight over a few weeks at a given intake and adjust from there if your real-world results differ.',
+  },
+];
+---
+
+<ToolLayout title={title} description={description} slug="tdee-calculator" summary={summary} faq={faq}>
+  <Fragment slot="tool">
+    <form class="calc-box" id="tdee-form" novalidate>
+      <div class="field-row">
+        <div class="field" id="sex-field">
+          <label for="sex-select">Sex</label>
+          <select id="sex-select" name="sex">
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </div>
+        <div class="field" id="age-field">
+          <label for="age-input">Age (years)</label>
+          <input type="number" id="age-input" name="age" min="15" max="100" step="1" required />
+          <span class="error-msg" id="age-error">Enter an age between 15 and 100.</span>
+        </div>
+        <div class="field" id="unit-field">
+          <label for="unit-select">Units</label>
+          <select id="unit-select" name="unit">
+            <option value="metric">Metric (kg, cm)</option>
+            <option value="imperial">Imperial (lb, in)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field" id="weight-field">
+          <label for="weight-input" id="weight-label">Weight (kg)</label>
+          <input type="number" id="weight-input" name="weight" min="0" step="0.1" required />
+          <span class="error-msg" id="weight-error">Enter a weight greater than 0.</span>
+        </div>
+        <div class="field" id="height-field">
+          <label for="height-input" id="height-label">Height (cm)</label>
+          <input type="number" id="height-input" name="height" min="0" step="0.1" required />
+          <span class="error-msg" id="height-error">Enter a height greater than 0.</span>
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:16px;">
+        <label for="activity-select">Activity level</label>
+        <select id="activity-select" name="activity">
+          <option value="1.2">Sedentary (little or no exercise)</option>
+          <option value="1.375">Lightly active (1 to 3 days a week)</option>
+          <option value="1.55" selected>Moderately active (3 to 5 days a week)</option>
+          <option value="1.725">Very active (6 to 7 days a week)</option>
+          <option value="1.9">Extra active (hard exercise and physical job)</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn">Calculate BMR and TDEE</button>
+    </form>
+
+    <div class="result-box" id="result-box" hidden>
+      <div class="result-headline" id="result-headline"></div>
+      <div class="result-row">
+        <span>BMR (calories at rest)</span>
+        <span class="value" id="result-bmr"></span>
+      </div>
+      <div class="result-row">
+        <span>TDEE (calories including activity)</span>
+        <span class="value" id="result-tdee"></span>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById('tdee-form') as HTMLFormElement;
+      const sexSelect = document.getElementById('sex-select') as HTMLSelectElement;
+      const ageInput = document.getElementById('age-input') as HTMLInputElement;
+      const ageField = document.getElementById('age-field') as HTMLElement;
+      const unitSelect = document.getElementById('unit-select') as HTMLSelectElement;
+      const weightInput = document.getElementById('weight-input') as HTMLInputElement;
+      const weightField = document.getElementById('weight-field') as HTMLElement;
+      const weightLabel = document.getElementById('weight-label') as HTMLElement;
+      const heightInput = document.getElementById('height-input') as HTMLInputElement;
+      const heightField = document.getElementById('height-field') as HTMLElement;
+      const heightLabel = document.getElementById('height-label') as HTMLElement;
+      const activitySelect = document.getElementById('activity-select') as HTMLSelectElement;
+      const resultBox = document.getElementById('result-box') as HTMLElement;
+      const headline = document.getElementById('result-headline') as HTMLElement;
+      const bmrEl = document.getElementById('result-bmr') as HTMLElement;
+      const tdeeEl = document.getElementById('result-tdee') as HTMLElement;
+
+      unitSelect.addEventListener('change', () => {
+        const metric = unitSelect.value === 'metric';
+        weightLabel.textContent = metric ? 'Weight (kg)' : 'Weight (lb)';
+        heightLabel.textContent = metric ? 'Height (cm)' : 'Height (in)';
+      });
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        ageField.classList.remove('has-error');
+        weightField.classList.remove('has-error');
+        heightField.classList.remove('has-error');
+
+        const age = parseInt(ageInput.value, 10);
+        let weight = parseFloat(weightInput.value);
+        let height = parseFloat(heightInput.value);
+        const metric = unitSelect.value === 'metric';
+        let hasError = false;
+
+        if (Number.isNaN(age) || age < 15 || age > 100) {
+          ageField.classList.add('has-error');
+          hasError = true;
+        }
+        if (Number.isNaN(weight) || weight <= 0) {
+          weightField.classList.add('has-error');
+          hasError = true;
+        }
+        if (Number.isNaN(height) || height <= 0) {
+          heightField.classList.add('has-error');
+          hasError = true;
+        }
+        if (hasError) {
+          resultBox.hidden = true;
+          return;
+        }
+
+        if (!metric) {
+          weight = weight * 0.45359237;
+          height = height * 2.54;
+        }
+
+        const activityFactor = parseFloat(activitySelect.value);
+        const sexOffset = sexSelect.value === 'male' ? 5 : -161;
+        const bmr = 10 * weight + 6.25 * height - 5 * age + sexOffset;
+        const tdee = bmr * activityFactor;
+
+        headline.textContent = `Results for a ${age} year old ${sexSelect.value}`;
+        bmrEl.textContent = `${Math.round(bmr)} calories/day`;
+        tdeeEl.textContent = `${Math.round(tdee)} calories/day`;
+        resultBox.hidden = false;
+      });
+    </script>
+  </Fragment>
+
+  <Fragment slot="how-it-works">
+    <h2>How It Works</h2>
+    <p>
+      This calculator uses the Mifflin-St Jeor equation to estimate BMR. For men:
+      <code>BMR = 10 x weight(kg) + 6.25 x height(cm) - 5 x age + 5</code>. For women:
+      <code>BMR = 10 x weight(kg) + 6.25 x height(cm) - 5 x age - 161</code>. TDEE is then BMR
+      multiplied by an activity factor: 1.2 for sedentary, 1.375 for lightly active, 1.55 for
+      moderately active, 1.725 for very active, and 1.9 for extra active.
+    </p>
+    <h3>Worked Example</h3>
+    <p>
+      A 30 year old man weighing 80 kg and 180 cm tall who is moderately active: BMR = 10 x 80 +
+      6.25 x 180 - 5 x 30 + 5 = 800 + 1125 - 150 + 5 = 1780 calories per day. TDEE = 1780 x 1.55 =
+      2759 calories per day. That 2759 figure is roughly how many calories he burns in a typical
+      day, including training, and is the starting point for setting a calorie target.
+    </p>
+  </Fragment>
+</ToolLayout>

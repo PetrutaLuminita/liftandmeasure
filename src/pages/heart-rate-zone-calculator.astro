@@ -1,0 +1,148 @@
+---
+import ToolLayout from '../layouts/ToolLayout.astro';
+
+const title = 'Heart Rate Zone Calculator | Lift and Measure';
+const description =
+  'Find your training heart rate zones from your age, with more accurate Karvonen method zones if you enter your resting heart rate.';
+const summary =
+  'Enter your age, and optionally your resting heart rate, to get five training heart rate zones ranging from very light to maximum effort.';
+
+const faq = [
+  {
+    question: 'How is maximum heart rate estimated?',
+    answer:
+      'This calculator uses the common estimate of 220 minus your age. It is a population average, so your true maximum heart rate could be meaningfully higher or lower, especially if you have measured it directly during a maximal exercise test.',
+  },
+  {
+    question: 'What is the Karvonen method and why does resting heart rate matter?',
+    answer:
+      'The Karvonen method factors in your heart rate reserve, the gap between your resting and maximum heart rate, rather than just a flat percentage of maximum. Two people with the same maximum heart rate but different fitness levels often have very different resting heart rates, so Karvonen zones tend to better reflect individual fitness.',
+  },
+  {
+    question: 'How do I measure my resting heart rate?',
+    answer:
+      'Check your pulse first thing in the morning before getting out of bed, over a full 60 seconds, ideally averaged over a few days for a stable number.',
+  },
+  {
+    question: 'What do the five zones mean in practice?',
+    answer:
+      'Zone 1 (very light) suits easy recovery and warm-ups. Zone 2 (light) suits long easy aerobic work. Zone 3 (moderate) suits steady-state training. Zone 4 (hard) suits harder tempo or threshold efforts. Zone 5 (maximum) suits short, high-intensity intervals.',
+  },
+  {
+    question: 'Do I need a heart rate monitor to use these zones?',
+    answer:
+      'A chest strap or wrist-based monitor makes it easier to stay in a target zone during exercise, but you can also periodically check your pulse manually and compare it to the ranges shown here.',
+  },
+];
+---
+
+<ToolLayout title={title} description={description} slug="heart-rate-zone-calculator" summary={summary} faq={faq}>
+  <Fragment slot="tool">
+    <form class="calc-box" id="hr-form" novalidate>
+      <div class="field-row">
+        <div class="field" id="age-field">
+          <label for="age-input">Age (years)</label>
+          <input type="number" id="age-input" name="age" min="10" max="100" step="1" required />
+          <span class="error-msg" id="age-error">Enter an age between 10 and 100.</span>
+        </div>
+        <div class="field" id="rhr-field">
+          <label for="rhr-input">Resting heart rate (bpm, optional)</label>
+          <input type="number" id="rhr-input" name="rhr" min="30" max="120" step="1" />
+          <span class="error-msg" id="rhr-error">Enter a resting heart rate between 30 and 120, or leave it blank.</span>
+        </div>
+      </div>
+
+      <button type="submit" class="btn">Calculate zones</button>
+    </form>
+
+    <div class="result-box" id="result-box" hidden>
+      <div class="result-headline" id="result-headline"></div>
+      <div id="zone-rows"></div>
+    </div>
+
+    <script>
+      const form = document.getElementById('hr-form') as HTMLFormElement;
+      const ageInput = document.getElementById('age-input') as HTMLInputElement;
+      const ageField = document.getElementById('age-field') as HTMLElement;
+      const rhrInput = document.getElementById('rhr-input') as HTMLInputElement;
+      const rhrField = document.getElementById('rhr-field') as HTMLElement;
+      const resultBox = document.getElementById('result-box') as HTMLElement;
+      const headline = document.getElementById('result-headline') as HTMLElement;
+      const zoneRows = document.getElementById('zone-rows') as HTMLElement;
+
+      const ZONES = [
+        { name: 'Zone 1, Very Light', low: 0.5, high: 0.6 },
+        { name: 'Zone 2, Light', low: 0.6, high: 0.7 },
+        { name: 'Zone 3, Moderate', low: 0.7, high: 0.8 },
+        { name: 'Zone 4, Hard', low: 0.8, high: 0.9 },
+        { name: 'Zone 5, Maximum', low: 0.9, high: 1.0 },
+      ];
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        ageField.classList.remove('has-error');
+        rhrField.classList.remove('has-error');
+
+        const age = parseInt(ageInput.value, 10);
+        const rhrRaw = rhrInput.value.trim();
+        const hasRhr = rhrRaw !== '';
+        const rhr = hasRhr ? parseInt(rhrRaw, 10) : null;
+        let hasError = false;
+
+        if (Number.isNaN(age) || age < 10 || age > 100) {
+          ageField.classList.add('has-error');
+          hasError = true;
+        }
+        if (hasRhr && (rhr === null || Number.isNaN(rhr) || rhr < 30 || rhr > 120)) {
+          rhrField.classList.add('has-error');
+          hasError = true;
+        }
+        if (hasError) {
+          resultBox.hidden = true;
+          return;
+        }
+
+        const maxHr = 220 - age;
+        zoneRows.innerHTML = '';
+
+        ZONES.forEach((zone) => {
+          let low: number;
+          let high: number;
+          if (hasRhr && rhr !== null) {
+            low = (maxHr - rhr) * zone.low + rhr;
+            high = (maxHr - rhr) * zone.high + rhr;
+          } else {
+            low = maxHr * zone.low;
+            high = maxHr * zone.high;
+          }
+          const row = document.createElement('div');
+          row.className = 'zone-row';
+          row.innerHTML = `<span class="zone-name">${zone.name}</span><span class="zone-pct">${Math.round(zone.low * 100)}-${Math.round(zone.high * 100)}%</span><span class="value">${Math.round(low)}-${Math.round(high)} bpm</span>`;
+          zoneRows.appendChild(row);
+        });
+
+        headline.textContent = hasRhr
+          ? `Estimated max HR: ${maxHr} bpm (Karvonen method)`
+          : `Estimated max HR: ${maxHr} bpm (simple percentage method)`;
+        resultBox.hidden = false;
+      });
+    </script>
+  </Fragment>
+
+  <Fragment slot="how-it-works">
+    <h2>How It Works</h2>
+    <p>
+      Maximum heart rate is estimated as <code>220 - age</code>. If you leave resting heart rate
+      blank, each zone is simply that percentage of your max heart rate. If you enter a resting
+      heart rate, the calculator switches to the Karvonen method:
+      <code>target HR = (max HR - resting HR) x intensity% + resting HR</code>, which accounts for
+      your heart rate reserve rather than just a flat share of your max.
+    </p>
+    <h3>Worked Example</h3>
+    <p>
+      A 40 year old with a resting heart rate of 60 bpm: max HR = 220 - 40 = 180 bpm. Heart rate
+      reserve = 180 - 60 = 120 bpm. For Zone 3 (70 to 80 percent): low = 120 x 0.7 + 60 = 144 bpm,
+      high = 120 x 0.8 + 60 = 156 bpm, so Zone 3 for this person is roughly 144 to 156 bpm.
+    </p>
+  </Fragment>
+</ToolLayout>

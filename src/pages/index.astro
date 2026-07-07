@@ -1,0 +1,54 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import AdSlot from '../components/AdSlot.astro';
+import { tools } from '../data/tools.js';
+
+const bodyComp = tools.filter((t) => t.category === 'Body and Composition');
+const performance = tools.filter((t) => t.category === 'Performance and Training');
+
+const title = 'Lift and Measure | Free Online Fitness Calculators';
+const description =
+  'Simple fitness calculators, no sign-up needed. Free tools for 1RM, macros, TDEE, body fat, running pace, and more.';
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'Lift and Measure',
+  url: 'https://liftandmeasure.com',
+};
+---
+
+<BaseLayout title={title} description={description} path="/" schema={schema}>
+  <h1>Lift and Measure</h1>
+  <p class="tagline">Simple fitness calculators, no sign-up needed.</p>
+
+  <p class="section-intro">
+    Ten free tools for training and body composition math. Pick one below. Every tool runs
+    right on this page, gives you a plain explanation of the formula it uses, and needs no
+    account or download.
+  </p>
+
+  <AdSlot position="home-top" />
+
+  <h2 class="category-heading" id="body-and-composition">Body and Composition</h2>
+  <div class="tool-grid">
+    {bodyComp.map((tool) => (
+      <a class="tool-card" href={`/${tool.slug}`}>
+        <h3>{tool.name}</h3>
+        <p>{tool.description}</p>
+      </a>
+    ))}
+  </div>
+
+  <h2 class="category-heading" id="performance-and-training">Performance and Training</h2>
+  <div class="tool-grid">
+    {performance.map((tool) => (
+      <a class="tool-card" href={`/${tool.slug}`}>
+        <h3>{tool.name}</h3>
+        <p>{tool.description}</p>
+      </a>
+    ))}
+  </div>
+
+  <AdSlot position="home-bottom" />
+</BaseLayout>

@@ -1,0 +1,245 @@
+---
+import ToolLayout from '../layouts/ToolLayout.astro';
+
+const title = 'Running Pace Calculator | Lift and Measure';
+const description =
+  'Calculate finish time from pace and distance, required pace from a goal time, or average speed for any run or race distance.';
+const summary =
+  'Choose whether you know your pace or your goal finish time, enter a distance (or pick a common race distance), and get finish time, pace, and average speed all at once.';
+
+const faq = [
+  {
+    question: 'What is the difference between the two modes?',
+    answer:
+      'The "I know my pace" mode takes a pace per kilometer or mile and a distance and works out your finish time. The "I know my finish time" mode takes a goal or actual finish time and a distance and works out the pace and average speed that produces.',
+  },
+  {
+    question: 'Why do results show pace, time, and speed together?',
+    answer:
+      'Once distance and either pace or time are known, all three values (time, pace, and speed) are mathematically linked, so the calculator shows all of them regardless of which one you entered.',
+  },
+  {
+    question: 'What distances do the quick-select buttons use?',
+    answer:
+      'They fill in the standard race distances: 5K (5 kilometers), 10K (10 kilometers), half marathon (21.0975 kilometers), and marathon (42.195 kilometers), converted automatically to miles if you are using imperial units.',
+  },
+  {
+    question: 'Can I calculate pace for a distance that is not a standard race, like a training run?',
+    answer:
+      'Yes. Enter any distance directly in the distance field instead of using a quick-select button, in either kilometers or miles depending on your unit choice.',
+  },
+  {
+    question: 'How is average speed calculated?',
+    answer:
+      'Average speed is distance divided by time, converted to a per-hour figure, so it is your distance covered per kilometer or mile, expressed as kilometers per hour or miles per hour.',
+  },
+];
+---
+
+<ToolLayout title={title} description={description} slug="running-pace-calculator" summary={summary} faq={faq}>
+  <Fragment slot="tool">
+    <div class="mode-tabs" role="group" aria-label="Calculation mode">
+      <button type="button" class="btn btn-secondary" id="mode-pace-btn" aria-pressed="true">I know my pace</button>
+      <button type="button" class="btn btn-secondary" id="mode-time-btn" aria-pressed="false">I know my finish time</button>
+    </div>
+
+    <form class="calc-box" id="pace-form" novalidate>
+      <div class="field-row">
+        <div class="field" id="unit-field">
+          <label for="unit-select">Unit</label>
+          <select id="unit-select" name="unit">
+            <option value="km">Kilometers (min/km)</option>
+            <option value="mi">Miles (min/mile)</option>
+          </select>
+        </div>
+        <div class="field" id="distance-field">
+          <label for="distance-input" id="distance-label">Distance (km)</label>
+          <input type="number" id="distance-input" name="distance" min="0" step="0.01" required />
+          <span class="error-msg" id="distance-error">Enter a distance greater than 0.</span>
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:16px;">
+        <label>Quick-select distance</label>
+        <div class="quick-tips" role="group" aria-label="Quick select race distance">
+          <button type="button" class="btn btn-secondary" data-km="5">5K</button>
+          <button type="button" class="btn btn-secondary" data-km="10">10K</button>
+          <button type="button" class="btn btn-secondary" data-km="21.0975">Half Marathon</button>
+          <button type="button" class="btn btn-secondary" data-km="42.195">Marathon</button>
+        </div>
+      </div>
+
+      <div class="field-row" id="pace-inputs">
+        <div class="field" id="pace-min-field">
+          <label for="pace-min-input" id="pace-min-label">Pace minutes (per km)</label>
+          <input type="number" id="pace-min-input" name="paceMin" min="0" step="1" value="0" />
+        </div>
+        <div class="field" id="pace-sec-field">
+          <label for="pace-sec-input">Pace seconds</label>
+          <input type="number" id="pace-sec-input" name="paceSec" min="0" max="59" step="1" value="0" />
+        </div>
+      </div>
+
+      <div class="field-row" id="time-inputs" hidden>
+        <div class="field" id="time-hr-field">
+          <label for="time-hr-input">Hours</label>
+          <input type="number" id="time-hr-input" name="timeHr" min="0" step="1" value="0" />
+        </div>
+        <div class="field" id="time-min-field">
+          <label for="time-min-input">Minutes</label>
+          <input type="number" id="time-min-input" name="timeMin" min="0" max="59" step="1" value="0" />
+        </div>
+        <div class="field" id="time-sec-field">
+          <label for="time-sec-input">Seconds</label>
+          <input type="number" id="time-sec-input" name="timeSec" min="0" max="59" step="1" value="0" />
+        </div>
+      </div>
+
+      <button type="submit" class="btn">Calculate</button>
+    </form>
+
+    <div class="result-box" id="result-box" hidden>
+      <div class="result-headline" id="result-headline"></div>
+      <div class="result-row">
+        <span>Finish time</span>
+        <span class="value" id="result-time"></span>
+      </div>
+      <div class="result-row">
+        <span>Pace</span>
+        <span class="value" id="result-pace"></span>
+      </div>
+      <div class="result-row">
+        <span>Average speed</span>
+        <span class="value" id="result-speed"></span>
+      </div>
+    </div>
+
+    <script>
+      const modePaceBtn = document.getElementById('mode-pace-btn') as HTMLButtonElement;
+      const modeTimeBtn = document.getElementById('mode-time-btn') as HTMLButtonElement;
+      const paceInputs = document.getElementById('pace-inputs') as HTMLElement;
+      const timeInputs = document.getElementById('time-inputs') as HTMLElement;
+      const unitSelect = document.getElementById('unit-select') as HTMLSelectElement;
+      const distanceInput = document.getElementById('distance-input') as HTMLInputElement;
+      const distanceField = document.getElementById('distance-field') as HTMLElement;
+      const distanceLabel = document.getElementById('distance-label') as HTMLElement;
+      const paceMinLabel = document.getElementById('pace-min-label') as HTMLElement;
+      const paceMinInput = document.getElementById('pace-min-input') as HTMLInputElement;
+      const paceSecInput = document.getElementById('pace-sec-input') as HTMLInputElement;
+      const timeHrInput = document.getElementById('time-hr-input') as HTMLInputElement;
+      const timeMinInput = document.getElementById('time-min-input') as HTMLInputElement;
+      const timeSecInput = document.getElementById('time-sec-input') as HTMLInputElement;
+      const form = document.getElementById('pace-form') as HTMLFormElement;
+      const resultBox = document.getElementById('result-box') as HTMLElement;
+      const headline = document.getElementById('result-headline') as HTMLElement;
+      const timeEl = document.getElementById('result-time') as HTMLElement;
+      const paceEl = document.getElementById('result-pace') as HTMLElement;
+      const speedEl = document.getElementById('result-speed') as HTMLElement;
+      const quickButtons = document.querySelectorAll<HTMLButtonElement>('[data-km]');
+
+      let mode: 'pace' | 'time' = 'pace';
+
+      function setMode(next: 'pace' | 'time') {
+        mode = next;
+        modePaceBtn.setAttribute('aria-pressed', String(next === 'pace'));
+        modeTimeBtn.setAttribute('aria-pressed', String(next === 'time'));
+        paceInputs.hidden = next !== 'pace';
+        timeInputs.hidden = next !== 'time';
+      }
+
+      modePaceBtn.addEventListener('click', () => setMode('pace'));
+      modeTimeBtn.addEventListener('click', () => setMode('time'));
+
+      function updateUnitLabels() {
+        const unitName = unitSelect.value === 'km' ? 'km' : 'mile';
+        distanceLabel.textContent = `Distance (${unitSelect.value === 'km' ? 'km' : 'miles'})`;
+        paceMinLabel.textContent = `Pace minutes (per ${unitName})`;
+      }
+      unitSelect.addEventListener('change', updateUnitLabels);
+      updateUnitLabels();
+
+      quickButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const km = parseFloat(btn.dataset.km ?? '0');
+          const distance = unitSelect.value === 'km' ? km : km / 1.609344;
+          distanceInput.value = distance.toFixed(4).replace(/\.?0+$/, '');
+        });
+      });
+
+      function formatTime(totalSeconds: number) {
+        const h = Math.floor(totalSeconds / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        const s = Math.round(totalSeconds % 60);
+        if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        return `${m}:${String(s).padStart(2, '0')}`;
+      }
+
+      function formatPace(secondsPerUnit: number, unitName: string) {
+        const m = Math.floor(secondsPerUnit / 60);
+        const s = Math.round(secondsPerUnit % 60);
+        return `${m}:${String(s).padStart(2, '0')} / ${unitName}`;
+      }
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        distanceField.classList.remove('has-error');
+
+        const distance = parseFloat(distanceInput.value);
+        if (Number.isNaN(distance) || distance <= 0) {
+          distanceField.classList.add('has-error');
+          resultBox.hidden = true;
+          return;
+        }
+
+        const unitName = unitSelect.value === 'km' ? 'km' : 'mile';
+        let totalSeconds: number;
+        let paceSecPerUnit: number;
+
+        if (mode === 'pace') {
+          const paceMin = parseFloat(paceMinInput.value) || 0;
+          const paceSec = parseFloat(paceSecInput.value) || 0;
+          paceSecPerUnit = paceMin * 60 + paceSec;
+          if (paceSecPerUnit <= 0) {
+            resultBox.hidden = true;
+            return;
+          }
+          totalSeconds = paceSecPerUnit * distance;
+        } else {
+          const hr = parseFloat(timeHrInput.value) || 0;
+          const min = parseFloat(timeMinInput.value) || 0;
+          const sec = parseFloat(timeSecInput.value) || 0;
+          totalSeconds = hr * 3600 + min * 60 + sec;
+          if (totalSeconds <= 0) {
+            resultBox.hidden = true;
+            return;
+          }
+          paceSecPerUnit = totalSeconds / distance;
+        }
+
+        const speed = distance / (totalSeconds / 3600);
+
+        headline.textContent = `${distance.toFixed(2)} ${unitName === 'km' ? 'km' : 'mi'}`;
+        timeEl.textContent = formatTime(totalSeconds);
+        paceEl.textContent = formatPace(paceSecPerUnit, unitName);
+        speedEl.textContent = `${speed.toFixed(2)} ${unitName === 'km' ? 'km/h' : 'mph'}`;
+        resultBox.hidden = false;
+      });
+    </script>
+  </Fragment>
+
+  <Fragment slot="how-it-works">
+    <h2>How It Works</h2>
+    <p>
+      Distance, pace, and time are all connected: finish time equals pace multiplied by distance,
+      pace equals finish time divided by distance, and average speed equals distance divided by
+      finish time (converted to a per-hour rate). This calculator takes whichever two values you
+      know and computes the rest.
+    </p>
+    <h3>Worked Example</h3>
+    <p>
+      Running a 10K at a pace of 5 minutes 30 seconds per kilometer: pace in seconds is 5 x 60 +
+      30 = 330 seconds per km. Finish time = 330 x 10 = 3300 seconds, which is 55 minutes. Average
+      speed = 10 km / (3300 / 3600 hours) = 10 / 0.9167 = 10.9 km/h.
+    </p>
+  </Fragment>
+</ToolLayout>

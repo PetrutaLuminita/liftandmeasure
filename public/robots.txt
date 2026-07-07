@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://liftandmeasure.com/sitemap-index.xml

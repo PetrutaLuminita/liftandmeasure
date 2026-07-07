@@ -1,0 +1,69 @@
+---
+import { tools } from '../data/tools.js';
+
+const bodyComp = tools.filter((t) => t.category === 'Body and Composition');
+const performance = tools.filter((t) => t.category === 'Performance and Training');
+---
+
+<header class="site-header">
+  <div class="header-inner wrap">
+    <a href="/" class="wordmark">Lift and Measure</a>
+
+    <nav class="main-nav" aria-label="Primary">
+      <div class="nav-group">
+        <button class="nav-label" type="button" aria-haspopup="true">Body and Composition</button>
+        <div class="nav-dropdown">
+          {bodyComp.map((tool) => (
+            <a href={`/${tool.slug}`}>{tool.name}</a>
+          ))}
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-label" type="button" aria-haspopup="true">Performance and Training</button>
+        <div class="nav-dropdown">
+          {performance.map((tool) => (
+            <a href={`/${tool.slug}`}>{tool.name}</a>
+          ))}
+        </div>
+      </div>
+      <div class="nav-group">
+        <a class="nav-label" href="/about">About</a>
+      </div>
+    </nav>
+
+    <button class="hamburger" type="button" aria-expanded="false" aria-controls="mobile-nav" id="hamburger-btn">
+      Menu
+    </button>
+  </div>
+
+  <div class="mobile-nav" id="mobile-nav">
+    <h3>Body and Composition</h3>
+    <ul>
+      {bodyComp.map((tool) => (
+        <li><a href={`/${tool.slug}`}>{tool.name}</a></li>
+      ))}
+    </ul>
+    <h3>Performance and Training</h3>
+    <ul>
+      {performance.map((tool) => (
+        <li><a href={`/${tool.slug}`}>{tool.name}</a></li>
+      ))}
+    </ul>
+    <h3>Site</h3>
+    <ul>
+      <li><a href="/about">About</a></li>
+      <li><a href="/contact">Contact</a></li>
+    </ul>
+  </div>
+</header>
+
+<script>
+  const btn = document.getElementById('hamburger-btn');
+  const nav = document.getElementById('mobile-nav');
+  if (btn && nav) {
+    btn.addEventListener('click', () => {
+      const isOpen = nav.classList.toggle('is-open');
+      btn.setAttribute('aria-expanded', String(isOpen));
+    });
+  }
+</script>

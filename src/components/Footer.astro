@@ -1,0 +1,43 @@
+---
+import { tools } from '../data/tools.js';
+
+const bodyComp = tools.filter((t) => t.category === 'Body and Composition');
+const performance = tools.filter((t) => t.category === 'Performance and Training');
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <h3>Body and Composition</h3>
+        <ul>
+          {bodyComp.map((tool) => (
+            <li><a href={`/${tool.slug}`}>{tool.name}</a></li>
+          ))}
+        </ul>
+      </div>
+      <div>
+        <h3>Performance and Training</h3>
+        <ul>
+          {performance.map((tool) => (
+            <li><a href={`/${tool.slug}`}>{tool.name}</a></li>
+          ))}
+        </ul>
+      </div>
+      <div>
+        <h3>Site</h3>
+        <ul>
+          <li><a href="/about">About</a></li>
+          <li><a href="/contact">Contact</a></li>
+          <li><a href="/privacy-policy">Privacy Policy</a></li>
+          <li><a href="/terms">Terms</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; {year} Lift and Measure</span>
+      <span>Simple fitness calculators, no sign-up needed.</span>
+    </div>
+  </div>
+</footer>

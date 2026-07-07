@@ -1,0 +1,221 @@
+---
+import ToolLayout from '../layouts/ToolLayout.astro';
+
+const title = 'Body Fat Calculator | Lift and Measure';
+const description =
+  'Estimate body fat percentage from neck, waist, and hip measurements using the US Navy circumference method, in metric or imperial units.';
+const summary =
+  'Enter your sex, height, neck, waist, and (for women) hip circumference to get an estimated body fat percentage using the US Navy method.';
+
+const faq = [
+  {
+    question: 'How accurate is the US Navy body fat method?',
+    answer:
+      'It is generally accurate within about 3 to 4 percent of body fat compared to more precise methods like DEXA scans, for most body types. It tends to be less accurate for people who are very lean or who carry weight in unusual proportions.',
+  },
+  {
+    question: 'Why does the formula only need three or four measurements?',
+    answer:
+      'The method was developed by the US Navy as a fast field measurement using tape-measure circumferences instead of equipment like calipers or scanners, trading some precision for speed and simplicity.',
+  },
+  {
+    question: 'Where exactly should I measure my waist and neck?',
+    answer:
+      'Measure the neck just below the larynx, with the tape sloping slightly downward toward the front. Measure the waist at its narrowest point for men, or at the level of the belly button for women. Measure hips at their widest point. Keep the tape snug but not compressing the skin.',
+  },
+  {
+    question: 'Why is hip measurement only used for women?',
+    answer:
+      'The original Navy formula was developed and validated separately for men and women, and the women\'s version includes hip circumference because fat distribution patterns differ between sexes.',
+  },
+  {
+    question: 'Can I use inches instead of centimeters?',
+    answer:
+      'Yes. Choose inches from the unit selector and enter your measurements as usual. The calculator converts everything to centimeters internally before applying the formula, since the published coefficients are defined in metric units.',
+  },
+  {
+    question: 'What should I do with my body fat percentage once I have it?',
+    answer:
+      'It is most useful as a baseline to track change over time using the same measuring technique, rather than as an exact clinical figure. Re-measure every few weeks under similar conditions to see a trend.',
+  },
+];
+---
+
+<ToolLayout title={title} description={description} slug="body-fat-calculator" summary={summary} faq={faq}>
+  <Fragment slot="tool">
+    <form class="calc-box" id="bf-form" novalidate>
+      <div class="field-row">
+        <div class="field" id="sex-field">
+          <label for="sex-select">Sex</label>
+          <select id="sex-select" name="sex">
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </div>
+        <div class="field" id="unit-field">
+          <label for="unit-select">Unit</label>
+          <select id="unit-select" name="unit">
+            <option value="cm">Centimeters</option>
+            <option value="in">Inches</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field" id="height-field">
+          <label for="height-input" id="height-label">Height (cm)</label>
+          <input type="number" id="height-input" name="height" min="0" step="0.1" required />
+          <span class="error-msg" id="height-error">Enter a height greater than 0.</span>
+        </div>
+        <div class="field" id="neck-field">
+          <label for="neck-input" id="neck-label">Neck circumference (cm)</label>
+          <input type="number" id="neck-input" name="neck" min="0" step="0.1" required />
+          <span class="error-msg" id="neck-error">Enter a neck measurement greater than 0.</span>
+        </div>
+        <div class="field" id="waist-field">
+          <label for="waist-input" id="waist-label">Waist circumference (cm)</label>
+          <input type="number" id="waist-input" name="waist" min="0" step="0.1" required />
+          <span class="error-msg" id="waist-error">Enter a waist measurement greater than your neck measurement.</span>
+        </div>
+        <div class="field" id="hip-field">
+          <label for="hip-input" id="hip-label">Hip circumference (cm)</label>
+          <input type="number" id="hip-input" name="hip" min="0" step="0.1" />
+          <span class="error-msg" id="hip-error">Enter a hip measurement greater than 0.</span>
+        </div>
+      </div>
+
+      <button type="submit" class="btn">Calculate body fat</button>
+    </form>
+
+    <div class="result-box" id="result-box" hidden>
+      <div class="result-headline" id="result-headline"></div>
+      <div class="result-row">
+        <span>Estimated body fat</span>
+        <span class="value" id="result-bf"></span>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById('bf-form') as HTMLFormElement;
+      const sexSelect = document.getElementById('sex-select') as HTMLSelectElement;
+      const unitSelect = document.getElementById('unit-select') as HTMLSelectElement;
+      const heightInput = document.getElementById('height-input') as HTMLInputElement;
+      const heightField = document.getElementById('height-field') as HTMLElement;
+      const heightLabel = document.getElementById('height-label') as HTMLElement;
+      const neckInput = document.getElementById('neck-input') as HTMLInputElement;
+      const neckField = document.getElementById('neck-field') as HTMLElement;
+      const neckLabel = document.getElementById('neck-label') as HTMLElement;
+      const waistInput = document.getElementById('waist-input') as HTMLInputElement;
+      const waistField = document.getElementById('waist-field') as HTMLElement;
+      const waistLabel = document.getElementById('waist-label') as HTMLElement;
+      const hipInput = document.getElementById('hip-input') as HTMLInputElement;
+      const hipField = document.getElementById('hip-field') as HTMLElement;
+      const hipLabel = document.getElementById('hip-label') as HTMLElement;
+      const resultBox = document.getElementById('result-box') as HTMLElement;
+      const headline = document.getElementById('result-headline') as HTMLElement;
+      const bfEl = document.getElementById('result-bf') as HTMLElement;
+
+      function updateLabels() {
+        const unit = unitSelect.value;
+        heightLabel.textContent = `Height (${unit})`;
+        neckLabel.textContent = `Neck circumference (${unit})`;
+        waistLabel.textContent = `Waist circumference (${unit})`;
+        hipLabel.textContent = `Hip circumference (${unit})`;
+      }
+
+      function updateSexFields() {
+        hipField.hidden = sexSelect.value !== 'female';
+        if (sexSelect.value === 'female') hipInput.setAttribute('required', 'required');
+        else hipInput.removeAttribute('required');
+      }
+
+      unitSelect.addEventListener('change', updateLabels);
+      sexSelect.addEventListener('change', updateSexFields);
+      updateLabels();
+      updateSexFields();
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        heightField.classList.remove('has-error');
+        neckField.classList.remove('has-error');
+        waistField.classList.remove('has-error');
+        hipField.classList.remove('has-error');
+
+        const isFemale = sexSelect.value === 'female';
+        const toCm = (v: number) => (unitSelect.value === 'in' ? v * 2.54 : v);
+
+        const height = parseFloat(heightInput.value);
+        const neck = parseFloat(neckInput.value);
+        const waist = parseFloat(waistInput.value);
+        const hip = parseFloat(hipInput.value);
+        let hasError = false;
+
+        if (Number.isNaN(height) || height <= 0) {
+          heightField.classList.add('has-error');
+          hasError = true;
+        }
+        if (Number.isNaN(neck) || neck <= 0) {
+          neckField.classList.add('has-error');
+          hasError = true;
+        }
+        if (Number.isNaN(waist) || waist <= neck) {
+          waistField.classList.add('has-error');
+          hasError = true;
+        }
+        if (isFemale && (Number.isNaN(hip) || hip <= 0)) {
+          hipField.classList.add('has-error');
+          hasError = true;
+        }
+        if (hasError) {
+          resultBox.hidden = true;
+          return;
+        }
+
+        const heightCm = toCm(height);
+        const neckCm = toCm(neck);
+        const waistCm = toCm(waist);
+        const hipCm = toCm(hip);
+
+        let bodyFat: number;
+        if (isFemale) {
+          bodyFat =
+            495 /
+              (1.29579 -
+                0.35004 * Math.log10(waistCm + hipCm - neckCm) +
+                0.221 * Math.log10(heightCm)) -
+            450;
+        } else {
+          bodyFat =
+            495 /
+              (1.0324 -
+                0.19077 * Math.log10(waistCm - neckCm) +
+                0.15456 * Math.log10(heightCm)) -
+            450;
+        }
+
+        headline.textContent = `Estimated body fat (US Navy method)`;
+        bfEl.textContent = `${bodyFat.toFixed(1)}%`;
+        resultBox.hidden = false;
+      });
+    </script>
+  </Fragment>
+
+  <Fragment slot="how-it-works">
+    <h2>How It Works</h2>
+    <p>
+      This calculator uses the US Navy circumference method. For men:
+      <code>body fat % = 495 / (1.0324 - 0.19077 x log10(waist - neck) + 0.15456 x log10(height)) - 450</code>.
+      For women:
+      <code>body fat % = 495 / (1.29579 - 0.35004 x log10(waist + hip - neck) + 0.221 x log10(height)) - 450</code>.
+      All measurements go into the formula in centimeters, so imperial entries are converted
+      before the calculation runs.
+    </p>
+    <h3>Worked Example</h3>
+    <p>
+      A man who is 180 cm tall with a 38 cm neck and 90 cm waist: waist minus neck = 52 cm. Log10
+      of 52 is about 1.716, log10 of 180 is about 2.255. Plugging in:
+      495 / (1.0324 - 0.19077 x 1.716 + 0.15456 x 2.255) - 450 = 495 / (1.0324 - 0.3274 + 0.3487)
+      - 450 = 495 / 1.0537 - 450, which works out to about 19.8 percent body fat.
+    </p>
+  </Fragment>
+</ToolLayout>

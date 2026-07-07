@@ -1,0 +1,115 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const title = 'Privacy Policy | Lift and Measure';
+const description = 'How Lift and Measure uses cookies, Google AdSense, and analytics, explained in plain language.';
+const path = '/privacy-policy';
+const lastUpdated = 'July 7, 2026';
+
+const schema = {
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://liftandmeasure.com' },
+    { '@type': 'ListItem', position: 2, name: 'Privacy Policy', item: 'https://liftandmeasure.com/privacy-policy' },
+  ],
+};
+---
+
+<BaseLayout title={title} description={description} path={path} schema={schema}>
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a>
+    <span class="sep">&gt;</span>
+    <span aria-current="page">Privacy Policy</span>
+  </nav>
+
+  <h1>Privacy Policy</h1>
+  <p class="disclaimer">Last updated: {lastUpdated}</p>
+
+  <p>
+    This page explains what data Lift and Measure collects, why, and how you can control it. We
+    have kept it in plain language rather than dense legal text.
+  </p>
+
+  <h2>What This Site Does Not Do</h2>
+  <p>
+    Every calculator on this site runs entirely in your browser. Values you type into a tool,
+    like your body weight, age, or lift totals, are never sent to a server, stored in a database,
+    or seen by anyone else. There is no account system and nothing to sign up for.
+  </p>
+
+  <h2>Cookies</h2>
+  <p>
+    This site uses cookies for two purposes: to remember whether you have accepted or declined
+    the cookie notice, and to support the advertising described below. Your browser lets you
+    block or delete cookies at any time through its settings, though doing so may cause the
+    cookie banner to reappear on your next visit.
+  </p>
+
+  <h2>Third-Party Advertising and Cookies</h2>
+  <p>
+    This site uses Google AdSense to show ads. Google and other third-party advertising vendors
+    use cookies to serve ads based on a visitor's prior visits to this site and to other sites
+    across the web. This is sometimes called interest based or personalized advertising. It works
+    by tracking browsing patterns at the browser or device level, not by identifying who you are.
+  </p>
+  <p>
+    This advertising data does not include personal identifiers such as your name, home address,
+    or email address. Google's own explanation of how it and its partners handle data collected
+    on sites like this one is available at
+    <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener noreferrer">policies.google.com/technologies/partner-sites</a>.
+  </p>
+  <p>
+    Visitors in the European Economic Area and the United Kingdom are shown a consent banner that
+    lets them choose whether to allow personalized advertising, in line with Google's certified
+    consent requirements for those regions.
+  </p>
+  <p>
+    If you would prefer not to see personalized ads, you can adjust your settings directly with
+    Google at <a href="https://adssettings.google.com" target="_blank" rel="noopener noreferrer">Google Ad Settings</a>,
+    or use the industry wide opt-out tool provided by the Digital Advertising Alliance at
+    <a href="https://www.aboutads.info" target="_blank" rel="noopener noreferrer">aboutads.info</a>.
+    Both let you opt out of interest based advertising across many participating sites and
+    advertisers, not just this one.
+  </p>
+  <p>
+    You can also disable cookies entirely through your browser's settings, which applies to the
+    cookies used for advertising as well as the ones this site uses to remember your cookie
+    banner choice. Doing so may cause some site features, such as remembering that choice between
+    visits, to stop working as expected.
+  </p>
+
+  <h2>Analytics</h2>
+  <p>
+    This site may use a privacy-conscious analytics tool to understand overall traffic, such as
+    which pages are visited and roughly how many people visit, so the site can be improved. Any
+    analytics used here does not identify you personally and is separate from the advertising
+    cookies described above.
+  </p>
+
+  <h2>Health and Fitness Information</h2>
+  <p>
+    The calculators on this site work with figures like body weight, body fat percentage, heart
+    rate, and calorie targets. As explained above, none of this information is transmitted
+    anywhere or stored outside your own browser. This site does not provide medical advice, and
+    the results are for general informational purposes only. See the
+    <a href="/terms">Terms of Use</a> for more on that point.
+  </p>
+
+  <h2>Children's Privacy</h2>
+  <p>
+    This site is not directed at children under 13 and does not knowingly collect personal
+    information from them.
+  </p>
+
+  <h2>Changes to This Policy</h2>
+  <p>
+    If this policy changes, the updated version will be posted on this page with a new "last
+    updated" date at the top.
+  </p>
+
+  <h2>Contact</h2>
+  <p>
+    Questions about this policy can be sent to
+    <a href="mailto:contact@liftandmeasure.com">contact@liftandmeasure.com</a>.
+  </p>
+</BaseLayout>

@@ -1,0 +1,174 @@
+---
+import ToolLayout from '../layouts/ToolLayout.astro';
+
+const title = 'Lean Body Mass Calculator | Lift and Measure';
+const description =
+  'Estimate lean body mass and fat mass from your sex, weight, and height using the Boer formula, in metric or imperial units.';
+const summary =
+  'Enter your sex, weight, and height to get an estimated lean body mass and fat mass using the Boer formula.';
+
+const faq = [
+  {
+    question: 'What is lean body mass?',
+    answer:
+      'Lean body mass is your total body weight minus fat mass. It includes muscle, bone, organs, water, and everything else that is not fat tissue.',
+  },
+  {
+    question: 'Why does this calculator use the Boer formula?',
+    answer:
+      'The Boer formula is a widely cited estimation method that only requires weight and height, making it practical when more detailed body composition data, like a body fat percentage from skinfold calipers or a scan, is not available.',
+  },
+  {
+    question: 'How is fat mass calculated from lean body mass?',
+    answer:
+      'Fat mass is simply your total body weight minus the estimated lean body mass. If the formula estimates 65 kg of lean mass for someone weighing 80 kg, their estimated fat mass is 15 kg.',
+  },
+  {
+    question: 'Is this the same as a body fat percentage test?',
+    answer:
+      'No. This is a formula-based estimate using only weight and height, so it does not measure your actual body composition the way skinfold calipers, bioelectrical impedance, or a DEXA scan would. For a circumference-based body fat percentage estimate, use the Body Fat Calculator instead.',
+  },
+  {
+    question: 'Why does the formula use different coefficients for men and women?',
+    answer:
+      'Men and women tend to carry different average proportions of muscle, bone, and essential fat at a given weight and height, so the Boer formula was derived separately for each sex to better reflect those average differences.',
+  },
+  {
+    question: 'Can I use this if I am very muscular or very lean?',
+    answer:
+      'Formula-based estimates like this one are built from average population data, so they can be less accurate for people who are notably more muscular or leaner than average. Treat the result as a general estimate rather than an exact figure.',
+  },
+];
+---
+
+<ToolLayout title={title} description={description} slug="lean-body-mass-calculator" summary={summary} faq={faq}>
+  <Fragment slot="tool">
+    <form class="calc-box" id="lbm-form" novalidate>
+      <div class="field-row">
+        <div class="field" id="sex-field">
+          <label for="sex-select">Sex</label>
+          <select id="sex-select" name="sex">
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </div>
+        <div class="field" id="unit-field">
+          <label for="unit-select">Units</label>
+          <select id="unit-select" name="unit">
+            <option value="metric">Metric (kg, cm)</option>
+            <option value="imperial">Imperial (lb, in)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field" id="weight-field">
+          <label for="weight-input" id="weight-label">Weight (kg)</label>
+          <input type="number" id="weight-input" name="weight" min="0" step="0.1" required />
+          <span class="error-msg" id="weight-error">Enter a weight greater than 0.</span>
+        </div>
+        <div class="field" id="height-field">
+          <label for="height-input" id="height-label">Height (cm)</label>
+          <input type="number" id="height-input" name="height" min="0" step="0.1" required />
+          <span class="error-msg" id="height-error">Enter a height greater than 0.</span>
+        </div>
+      </div>
+
+      <button type="submit" class="btn">Calculate lean body mass</button>
+    </form>
+
+    <div class="result-box" id="result-box" hidden>
+      <div class="result-headline" id="result-headline"></div>
+      <div class="result-row">
+        <span>Lean body mass</span>
+        <span class="value" id="result-lbm"></span>
+      </div>
+      <div class="result-row">
+        <span>Estimated fat mass</span>
+        <span class="value" id="result-fat"></span>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById('lbm-form') as HTMLFormElement;
+      const sexSelect = document.getElementById('sex-select') as HTMLSelectElement;
+      const unitSelect = document.getElementById('unit-select') as HTMLSelectElement;
+      const weightInput = document.getElementById('weight-input') as HTMLInputElement;
+      const weightField = document.getElementById('weight-field') as HTMLElement;
+      const weightLabel = document.getElementById('weight-label') as HTMLElement;
+      const heightInput = document.getElementById('height-input') as HTMLInputElement;
+      const heightField = document.getElementById('height-field') as HTMLElement;
+      const heightLabel = document.getElementById('height-label') as HTMLElement;
+      const resultBox = document.getElementById('result-box') as HTMLElement;
+      const headline = document.getElementById('result-headline') as HTMLElement;
+      const lbmEl = document.getElementById('result-lbm') as HTMLElement;
+      const fatEl = document.getElementById('result-fat') as HTMLElement;
+
+      unitSelect.addEventListener('change', () => {
+        const metric = unitSelect.value === 'metric';
+        weightLabel.textContent = metric ? 'Weight (kg)' : 'Weight (lb)';
+        heightLabel.textContent = metric ? 'Height (cm)' : 'Height (in)';
+      });
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        weightField.classList.remove('has-error');
+        heightField.classList.remove('has-error');
+
+        let weight = parseFloat(weightInput.value);
+        let height = parseFloat(heightInput.value);
+        const metric = unitSelect.value === 'metric';
+        let hasError = false;
+
+        if (Number.isNaN(weight) || weight <= 0) {
+          weightField.classList.add('has-error');
+          hasError = true;
+        }
+        if (Number.isNaN(height) || height <= 0) {
+          heightField.classList.add('has-error');
+          hasError = true;
+        }
+        if (hasError) {
+          resultBox.hidden = true;
+          return;
+        }
+
+        const weightKg = metric ? weight : weight * 0.45359237;
+        const heightCm = metric ? height : height * 2.54;
+        const displayWeightUnit = metric ? 'kg' : 'lb';
+
+        let lbmKg: number;
+        if (sexSelect.value === 'male') {
+          lbmKg = 0.407 * weightKg + 0.267 * heightCm - 19.2;
+        } else {
+          lbmKg = 0.252 * weightKg + 0.473 * heightCm - 48.3;
+        }
+        const fatMassKg = weightKg - lbmKg;
+
+        const lbmDisplay = metric ? lbmKg : lbmKg / 0.45359237;
+        const fatDisplay = metric ? fatMassKg : fatMassKg / 0.45359237;
+
+        headline.textContent = `Estimated body composition`;
+        lbmEl.textContent = `${lbmDisplay.toFixed(1)} ${displayWeightUnit}`;
+        fatEl.textContent = `${fatDisplay.toFixed(1)} ${displayWeightUnit}`;
+        resultBox.hidden = false;
+      });
+    </script>
+  </Fragment>
+
+  <Fragment slot="how-it-works">
+    <h2>How It Works</h2>
+    <p>
+      This calculator uses the Boer formula. For men:
+      <code>LBM = 0.407 x weight(kg) + 0.267 x height(cm) - 19.2</code>. For women:
+      <code>LBM = 0.252 x weight(kg) + 0.473 x height(cm) - 48.3</code>. Fat mass is then your
+      total weight minus that lean body mass estimate. Imperial entries are converted to
+      kilograms and centimeters before the formula runs, then converted back for display.
+    </p>
+    <h3>Worked Example</h3>
+    <p>
+      A woman weighing 65 kg at 165 cm tall: LBM = 0.252 x 65 + 0.473 x 165 - 48.3 = 16.38 +
+      78.045 - 48.3 = 46.1 kg of lean body mass. Fat mass = 65 - 46.1 = 18.9 kg.
+    </p>
+  </Fragment>
+</ToolLayout>

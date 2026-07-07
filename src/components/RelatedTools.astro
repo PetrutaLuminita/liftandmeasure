@@ -1,0 +1,17 @@
+---
+import { getRelatedTools } from '../data/tools.js';
+
+const { current, count = 3 } = Astro.props;
+const related = getRelatedTools(current, count);
+---
+
+<section class="related-tools" aria-label="Related tools">
+  <h2>Related Tools</h2>
+  <ul>
+    {related.map((tool) => (
+      <li>
+        <a href={`/${tool.slug}`}>{tool.name}</a>
+      </li>
+    ))}
+  </ul>
+</section>

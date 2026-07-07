@@ -1,0 +1,42 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const title = 'Contact | Lift and Measure';
+const description = 'How to get in touch with Lift and Measure about a tool, a correction, or feedback.';
+const path = '/contact';
+
+const schema = {
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://liftandmeasure.com' },
+    { '@type': 'ListItem', position: 2, name: 'Contact', item: 'https://liftandmeasure.com/contact' },
+  ],
+};
+---
+
+<BaseLayout title={title} description={description} path={path} schema={schema}>
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a>
+    <span class="sep">&gt;</span>
+    <span aria-current="page">Contact</span>
+  </nav>
+
+  <h1>Contact</h1>
+
+  <p>
+    This site is run by a small team and does not have a live chat or phone line, but every
+    message sent by email is read.
+  </p>
+  <p>
+    For corrections to a formula or reference value, questions about how a tool works, or general
+    feedback, email <a href="mailto:contact@liftandmeasure.com">contact@liftandmeasure.com</a>.
+  </p>
+  <p>
+    If you are reporting an error in a calculation (a formula, coefficient, or MET value), please
+    mention the specific tool and the inputs you used so it can be checked and fixed quickly.
+  </p>
+  <p>
+    For anything related to advertising on this site, see the
+    <a href="/privacy-policy">Privacy Policy</a> for details on how ads and cookies are used.
+  </p>
+</BaseLayout>

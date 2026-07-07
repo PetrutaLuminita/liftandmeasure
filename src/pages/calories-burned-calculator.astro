@@ -1,0 +1,175 @@
+---
+import ToolLayout from '../layouts/ToolLayout.astro';
+
+const title = 'Calories Burned Calculator | Lift and Measure';
+const description =
+  'Estimate calories burned during exercise using standard MET (metabolic equivalent of task) values, your body weight, and activity duration.';
+const summary =
+  'Choose an activity, enter your body weight and how long you did it, and get an estimated calorie burn based on the standard MET value for that activity.';
+
+const faq = [
+  {
+    question: 'What does MET mean?',
+    answer:
+      'MET stands for metabolic equivalent of task. One MET is roughly the energy your body uses at rest. An activity with a MET value of 8 uses about 8 times as much energy as sitting still.',
+  },
+  {
+    question: 'How is calories burned calculated from a MET value?',
+    answer:
+      'Calories burned equals the MET value multiplied by your body weight in kilograms, multiplied by the duration of the activity in hours. This is the standard formula used across most fitness calculators and research studies.',
+  },
+  {
+    question: 'Where do the MET values on this page come from?',
+    answer:
+      'They are based on the widely published Compendium of Physical Activities, a reference researchers use to standardize MET values for common activities.',
+  },
+  {
+    question: 'Why might my actual calorie burn differ from this estimate?',
+    answer:
+      'MET values are population averages for a given activity and intensity. Your actual energy use also depends on your fitness level, body composition, effort level, terrain, and other individual factors, so treat this as an estimate rather than an exact figure.',
+  },
+  {
+    question: 'Does a heavier person burn more calories doing the same activity?',
+    answer:
+      'Yes. Since the formula multiplies the MET value by body weight, a heavier person burns more calories than a lighter person doing the identical activity for the identical duration.',
+  },
+  {
+    question: 'Should I use this to decide how much to eat?',
+    answer:
+      'It can inform a rough estimate, but exercise calorie estimates are one of the least precise numbers in fitness tracking. If you are managing calorie intake closely, the Macro Calculator and TDEE Calculator on this site are more reliable starting points than adding back exercise calories one for one.',
+  },
+];
+
+const activities = [
+  { label: 'Walking, moderate pace (3 mph)', met: 3.5 },
+  { label: 'Walking, brisk pace (4 mph)', met: 5.0 },
+  { label: 'Running, 5 mph (12 min/mile)', met: 8.3 },
+  { label: 'Running, 6 mph (10 min/mile)', met: 9.8 },
+  { label: 'Running, 7.5 mph (8 min/mile)', met: 11.0 },
+  { label: 'Running, 10 mph (6 min/mile)', met: 14.5 },
+  { label: 'Cycling, leisure (under 10 mph)', met: 4.0 },
+  { label: 'Cycling, moderate (12 to 13.9 mph)', met: 8.0 },
+  { label: 'Cycling, vigorous (14 to 15.9 mph)', met: 10.0 },
+  { label: 'Swimming, moderate effort', met: 6.0 },
+  { label: 'Swimming, vigorous effort', met: 9.8 },
+  { label: 'Weightlifting, general', met: 3.5 },
+  { label: 'Weightlifting, vigorous effort', met: 6.0 },
+  { label: 'Yoga', met: 2.5 },
+  { label: 'Hiking, cross country', met: 6.0 },
+  { label: 'Jump rope', met: 12.3 },
+  { label: 'Elliptical trainer, moderate', met: 5.0 },
+];
+---
+
+<ToolLayout title={title} description={description} slug="calories-burned-calculator" summary={summary} faq={faq}>
+  <Fragment slot="tool">
+    <form class="calc-box" id="cal-form" novalidate>
+      <div class="field" style="margin-bottom:16px;">
+        <label for="activity-select">Activity</label>
+        <select id="activity-select" name="activity">
+          {activities.map((a) => (
+            <option value={a.met}>{a.label}</option>
+          ))}
+        </select>
+      </div>
+
+      <div class="field-row">
+        <div class="field" id="weight-field">
+          <label for="weight-input" id="weight-label">Body weight (kg)</label>
+          <input type="number" id="weight-input" name="weight" min="0" step="0.1" required />
+          <span class="error-msg" id="weight-error">Enter a weight greater than 0.</span>
+        </div>
+        <div class="field" id="unit-field">
+          <label for="unit-select">Unit</label>
+          <select id="unit-select" name="unit">
+            <option value="kg">kg</option>
+            <option value="lb">lb</option>
+          </select>
+        </div>
+        <div class="field" id="duration-field">
+          <label for="duration-input">Duration (minutes)</label>
+          <input type="number" id="duration-input" name="duration" min="0" step="1" required />
+          <span class="error-msg" id="duration-error">Enter a duration greater than 0.</span>
+        </div>
+      </div>
+
+      <button type="submit" class="btn">Calculate calories burned</button>
+    </form>
+
+    <div class="result-box" id="result-box" hidden>
+      <div class="result-headline" id="result-headline"></div>
+      <div class="result-row">
+        <span>Estimated calories burned</span>
+        <span class="value" id="result-calories"></span>
+      </div>
+      <p class="disclaimer">
+        MET values are population averages and estimates will vary from your actual energy use.
+      </p>
+    </div>
+
+    <script>
+      const form = document.getElementById('cal-form') as HTMLFormElement;
+      const activitySelect = document.getElementById('activity-select') as HTMLSelectElement;
+      const weightInput = document.getElementById('weight-input') as HTMLInputElement;
+      const weightField = document.getElementById('weight-field') as HTMLElement;
+      const weightLabel = document.getElementById('weight-label') as HTMLElement;
+      const unitSelect = document.getElementById('unit-select') as HTMLSelectElement;
+      const durationInput = document.getElementById('duration-input') as HTMLInputElement;
+      const durationField = document.getElementById('duration-field') as HTMLElement;
+      const resultBox = document.getElementById('result-box') as HTMLElement;
+      const headline = document.getElementById('result-headline') as HTMLElement;
+      const caloriesEl = document.getElementById('result-calories') as HTMLElement;
+
+      unitSelect.addEventListener('change', () => {
+        weightLabel.textContent = `Body weight (${unitSelect.value})`;
+      });
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        weightField.classList.remove('has-error');
+        durationField.classList.remove('has-error');
+
+        const weight = parseFloat(weightInput.value);
+        const duration = parseFloat(durationInput.value);
+        let hasError = false;
+
+        if (Number.isNaN(weight) || weight <= 0) {
+          weightField.classList.add('has-error');
+          hasError = true;
+        }
+        if (Number.isNaN(duration) || duration <= 0) {
+          durationField.classList.add('has-error');
+          hasError = true;
+        }
+        if (hasError) {
+          resultBox.hidden = true;
+          return;
+        }
+
+        const weightKg = unitSelect.value === 'kg' ? weight : weight * 0.45359237;
+        const met = parseFloat(activitySelect.value);
+        const hours = duration / 60;
+        const calories = met * weightKg * hours;
+
+        headline.textContent = `${activitySelect.options[activitySelect.selectedIndex].text}, ${duration} minutes`;
+        caloriesEl.textContent = `${Math.round(calories)} calories`;
+        resultBox.hidden = false;
+      });
+    </script>
+  </Fragment>
+
+  <Fragment slot="how-it-works">
+    <h2>How It Works</h2>
+    <p>
+      Calories burned equals <code>MET x weight(kg) x duration(hours)</code>. Every activity in
+      the dropdown has a standard MET value from published research. Your body weight scales the
+      result, since heavier bodies use more energy to perform the same activity, and duration
+      scales it linearly with time spent.
+    </p>
+    <h3>Worked Example</h3>
+    <p>
+      A person weighing 70 kg runs at 6 mph (MET 9.8) for 30 minutes. Duration in hours = 30 / 60
+      = 0.5. Calories = 9.8 x 70 x 0.5 = 343 calories.
+    </p>
+  </Fragment>
+</ToolLayout>

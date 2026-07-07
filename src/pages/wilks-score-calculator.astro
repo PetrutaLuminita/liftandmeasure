@@ -1,0 +1,190 @@
+---
+import ToolLayout from '../layouts/ToolLayout.astro';
+
+const title = 'Wilks Score Calculator | Lift and Measure';
+const description =
+  'Calculate your Wilks score using the original 1994 Wilks coefficient formula, to compare powerlifting strength across different body weights.';
+const summary =
+  'Enter your sex, body weight, and lifted total (squat, bench press, and deadlift combined, or any single lift total) to get your Wilks score using the original 1994 Wilks formula.';
+
+const faq = [
+  {
+    question: 'What is a Wilks score used for?',
+    answer:
+      'It normalizes a lifted total against body weight, using a formula-derived coefficient, so lifters of different sizes can be compared on a level basis. It is commonly used in powerlifting competitions to rank lifters across weight classes.',
+  },
+  {
+    question: 'Which version of the Wilks formula does this calculator use?',
+    answer:
+      'This calculator uses the original 1994 Wilks coefficient formula with separate polynomial coefficients for men and women, which is still the version most widely referenced and used for general comparison purposes. It is not the newer Wilks 2 (2020) coefficient update.',
+  },
+  {
+    question: 'What total should I enter?',
+    answer:
+      'Enter your competition total, meaning the sum of your best successful squat, bench press, and deadlift attempts. You can also enter a single lift total if you just want to compare one lift rather than a full meet total.',
+  },
+  {
+    question: 'Why does the formula need a fifth-degree polynomial?',
+    answer:
+      'The relationship between body weight and relative strength is not a straight line or a simple ratio, so the original Wilks formula was built by fitting a fifth-degree polynomial curve to competition data in order to model that relationship closely across the full range of body weights.',
+  },
+  {
+    question: 'Does a higher Wilks score always mean a stronger lifter?',
+    answer:
+      'It means a higher lifted total relative to body weight, according to this formula. It is a useful, widely accepted comparison tool, but like any single formula it has known quirks at the extreme ends of the body weight range.',
+  },
+  {
+    question: 'Can I use this for a single all-time personal record, not just a meet total?',
+    answer:
+      'Yes. The formula does not care what the total represents, it simply multiplies whatever total you enter by the coefficient for your body weight and sex.',
+  },
+];
+---
+
+<ToolLayout title={title} description={description} slug="wilks-score-calculator" summary={summary} faq={faq}>
+  <Fragment slot="tool">
+    <form class="calc-box" id="wilks-form" novalidate>
+      <div class="field-row">
+        <div class="field" id="sex-field">
+          <label for="sex-select">Sex</label>
+          <select id="sex-select" name="sex">
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </div>
+        <div class="field" id="unit-field">
+          <label for="unit-select">Unit</label>
+          <select id="unit-select" name="unit">
+            <option value="kg">Kilograms</option>
+            <option value="lb">Pounds</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field" id="weight-field">
+          <label for="weight-input" id="weight-label">Body weight (kg)</label>
+          <input type="number" id="weight-input" name="weight" min="0" step="0.1" required />
+          <span class="error-msg" id="weight-error">Enter a body weight greater than 0.</span>
+        </div>
+        <div class="field" id="total-field">
+          <label for="total-input" id="total-label">Lifted total (kg)</label>
+          <input type="number" id="total-input" name="total" min="0" step="0.5" required />
+          <span class="error-msg" id="total-error">Enter a lifted total greater than 0.</span>
+        </div>
+      </div>
+
+      <button type="submit" class="btn">Calculate Wilks score</button>
+    </form>
+
+    <div class="result-box" id="result-box" hidden>
+      <div class="result-headline" id="result-headline"></div>
+      <div class="result-row">
+        <span>Wilks coefficient</span>
+        <span class="value" id="result-coefficient"></span>
+      </div>
+      <div class="result-row">
+        <span>Wilks score</span>
+        <span class="value" id="result-score"></span>
+      </div>
+    </div>
+
+    <script>
+      const MEN = {
+        a: -216.0475144,
+        b: 16.2606339,
+        c: -0.002388645,
+        d: -0.00113732,
+        e: 7.01863e-6,
+        f: -1.291e-8,
+      };
+      const WOMEN = {
+        a: 594.31747775582,
+        b: -27.23842536447,
+        c: 0.82112226871,
+        d: -0.00930733913,
+        e: 4.731582e-5,
+        f: -9.054e-8,
+      };
+
+      function wilksCoefficient(bodyWeightKg: number, isMale: boolean) {
+        const k = isMale ? MEN : WOMEN;
+        const x = bodyWeightKg;
+        const denominator =
+          k.a + k.b * x + k.c * x ** 2 + k.d * x ** 3 + k.e * x ** 4 + k.f * x ** 5;
+        return 500 / denominator;
+      }
+
+      const form = document.getElementById('wilks-form') as HTMLFormElement;
+      const sexSelect = document.getElementById('sex-select') as HTMLSelectElement;
+      const unitSelect = document.getElementById('unit-select') as HTMLSelectElement;
+      const weightInput = document.getElementById('weight-input') as HTMLInputElement;
+      const weightField = document.getElementById('weight-field') as HTMLElement;
+      const weightLabel = document.getElementById('weight-label') as HTMLElement;
+      const totalInput = document.getElementById('total-input') as HTMLInputElement;
+      const totalField = document.getElementById('total-field') as HTMLElement;
+      const totalLabel = document.getElementById('total-label') as HTMLElement;
+      const resultBox = document.getElementById('result-box') as HTMLElement;
+      const headline = document.getElementById('result-headline') as HTMLElement;
+      const coefficientEl = document.getElementById('result-coefficient') as HTMLElement;
+      const scoreEl = document.getElementById('result-score') as HTMLElement;
+
+      unitSelect.addEventListener('change', () => {
+        weightLabel.textContent = `Body weight (${unitSelect.value})`;
+        totalLabel.textContent = `Lifted total (${unitSelect.value})`;
+      });
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        weightField.classList.remove('has-error');
+        totalField.classList.remove('has-error');
+
+        const weight = parseFloat(weightInput.value);
+        const total = parseFloat(totalInput.value);
+        let hasError = false;
+
+        if (Number.isNaN(weight) || weight <= 0) {
+          weightField.classList.add('has-error');
+          hasError = true;
+        }
+        if (Number.isNaN(total) || total <= 0) {
+          totalField.classList.add('has-error');
+          hasError = true;
+        }
+        if (hasError) {
+          resultBox.hidden = true;
+          return;
+        }
+
+        const weightKg = unitSelect.value === 'kg' ? weight : weight * 0.45359237;
+        const isMale = sexSelect.value === 'male';
+        const coefficient = wilksCoefficient(weightKg, isMale);
+        const score = coefficient * total;
+
+        headline.textContent = `Wilks score (1994 formula)`;
+        coefficientEl.textContent = coefficient.toFixed(4);
+        scoreEl.textContent = score.toFixed(2);
+        resultBox.hidden = false;
+      });
+    </script>
+  </Fragment>
+
+  <Fragment slot="how-it-works">
+    <h2>How It Works</h2>
+    <p>
+      The Wilks formula calculates a coefficient from your body weight using a fifth-degree
+      polynomial, then multiplies your lifted total by that coefficient to get a score comparable
+      across body weights. The coefficient is <code>500 / (a + b·x + c·x² + d·x³ + e·x⁴ + f·x⁵)</code>,
+      where x is body weight in kilograms and a through f are constants that differ for men and
+      women in the original 1994 formula this calculator uses.
+    </p>
+    <h3>Worked Example</h3>
+    <p>
+      A man weighing 83 kg with a 500 kg total: plugging 83 kg into the men's polynomial gives a
+      coefficient of about 0.6675. Wilks score = 0.6675 x 500 = about 333.7. A woman weighing 63
+      kg with a 300 kg total gives a coefficient of about 1.0740, for a Wilks score of about
+      322.2, even though her total is much lower, because the coefficient adjusts for body weight
+      and sex.
+    </p>
+  </Fragment>
+</ToolLayout>

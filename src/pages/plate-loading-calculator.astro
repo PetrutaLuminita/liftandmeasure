@@ -1,0 +1,237 @@
+---
+import ToolLayout from '../layouts/ToolLayout.astro';
+
+const title = 'Plate Loading Calculator | Lift and Measure';
+const description =
+  'Work out exactly which plates to load on each side of the barbell to hit a target total weight, in kilograms or pounds.';
+const summary =
+  'Enter a target weight, the bar weight, and which plates you have available to see exactly how many of each plate to load on each side of the bar.';
+
+const faq = [
+  {
+    question: 'How does the calculator decide which plates to use?',
+    answer:
+      'It subtracts the bar weight from your target, splits the remainder evenly between both sides, then fills each side starting with the largest available plate and working down to the smallest, the same way most lifters load a bar by hand.',
+  },
+  {
+    question: 'What if my target weight cannot be loaded exactly?',
+    answer:
+      'If your available plates cannot make an exact match, the calculator loads the closest weight it can reach without going over and tells you the resulting total so you know the true weight on the bar.',
+  },
+  {
+    question: 'What is a standard Olympic bar weight?',
+    answer:
+      'Most Olympic barbells weigh 20 kg (about 44 lb) in metric gyms or 45 lb in US gyms. Some gyms also use lighter training bars, technique bars, or trap bars, which is why a custom bar weight field is included.',
+  },
+  {
+    question: 'Why does the result show plates per side instead of a total plate count?',
+    answer:
+      'You load the same plates on both sides of the bar to keep it balanced, so per side is what actually matters when you are loading weight before a lift.',
+  },
+  {
+    question: 'Can I use this with kilogram plates and a pound target, or the other way around?',
+    answer:
+      'No, keep your target weight, bar weight, and plate sizes in the same unit system for an accurate result. Convert your target to kilograms first if you only have kilogram plates available, or to pounds if you only have pound plates.',
+  },
+];
+---
+
+<ToolLayout title={title} description={description} slug="plate-loading-calculator" summary={summary} faq={faq}>
+  <Fragment slot="tool">
+    <form class="calc-box" id="plate-form" novalidate>
+      <div class="field-row">
+        <div class="field" id="unit-field">
+          <label for="unit-select">Unit</label>
+          <select id="unit-select" name="unit">
+            <option value="kg">Kilograms</option>
+            <option value="lb">Pounds</option>
+          </select>
+        </div>
+        <div class="field" id="target-field">
+          <label for="target-input">Target total weight</label>
+          <input type="number" id="target-input" name="target" min="0" step="0.5" required />
+          <span class="error-msg" id="target-error">Enter a target weight greater than 0.</span>
+        </div>
+        <div class="field" id="bar-field">
+          <label for="bar-select">Bar weight</label>
+          <select id="bar-select" name="bar">
+            <option value="20">Standard Olympic bar (20 kg)</option>
+            <option value="45-lb">Standard Olympic bar (45 lb)</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div class="field" id="custom-bar-field" hidden>
+          <label for="custom-bar-input">Custom bar weight</label>
+          <input type="number" id="custom-bar-input" name="customBar" min="0" step="0.5" />
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:16px;">
+        <label>Available plates (per pair)</label>
+        <div class="checkbox-grid" id="plate-checkboxes"></div>
+      </div>
+
+      <button type="submit" class="btn">Calculate plates</button>
+    </form>
+
+    <div class="result-box" id="result-box" hidden>
+      <div class="result-headline" id="result-headline"></div>
+      <p><strong>Plates per side (largest to smallest):</strong></p>
+      <ul class="plate-list" id="plate-list"></ul>
+      <div class="result-row" id="actual-total-row" hidden>
+        <span>Actual total loaded</span>
+        <span class="value" id="result-actual-total"></span>
+      </div>
+    </div>
+
+    <script>
+      const KG_PLATES = [25, 20, 15, 10, 5, 2.5, 1.25];
+      const LB_PLATES = [45, 35, 25, 10, 5, 2.5];
+
+      const form = document.getElementById('plate-form') as HTMLFormElement;
+      const unitSelect = document.getElementById('unit-select') as HTMLSelectElement;
+      const targetInput = document.getElementById('target-input') as HTMLInputElement;
+      const targetField = document.getElementById('target-field') as HTMLElement;
+      const barSelect = document.getElementById('bar-select') as HTMLSelectElement;
+      const customBarField = document.getElementById('custom-bar-field') as HTMLElement;
+      const customBarInput = document.getElementById('custom-bar-input') as HTMLInputElement;
+      const plateCheckboxes = document.getElementById('plate-checkboxes') as HTMLElement;
+      const resultBox = document.getElementById('result-box') as HTMLElement;
+      const headline = document.getElementById('result-headline') as HTMLElement;
+      const plateList = document.getElementById('plate-list') as HTMLElement;
+      const actualTotalRow = document.getElementById('actual-total-row') as HTMLElement;
+      const actualTotalEl = document.getElementById('result-actual-total') as HTMLElement;
+
+      function renderPlateCheckboxes() {
+        const unit = unitSelect.value;
+        const sizes = unit === 'kg' ? KG_PLATES : LB_PLATES;
+        plateCheckboxes.innerHTML = '';
+        sizes.forEach((size) => {
+          const label = document.createElement('label');
+          label.className = 'checkbox-field';
+          const input = document.createElement('input');
+          input.type = 'checkbox';
+          input.checked = true;
+          input.value = String(size);
+          input.name = 'plate';
+          label.appendChild(input);
+          label.appendChild(document.createTextNode(`${size} ${unit}`));
+          plateCheckboxes.appendChild(label);
+        });
+      }
+
+      function updateBarDefaults() {
+        if (barSelect.value === '20') {
+          unitSelect.value = 'kg';
+          customBarField.hidden = true;
+          renderPlateCheckboxes();
+        } else if (barSelect.value === '45-lb') {
+          unitSelect.value = 'lb';
+          customBarField.hidden = true;
+          renderPlateCheckboxes();
+        } else {
+          customBarField.hidden = false;
+        }
+      }
+
+      barSelect.addEventListener('change', updateBarDefaults);
+      unitSelect.addEventListener('change', renderPlateCheckboxes);
+      renderPlateCheckboxes();
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        targetField.classList.remove('has-error');
+
+        const unit = unitSelect.value;
+        const target = parseFloat(targetInput.value);
+        let barWeight: number;
+        if (barSelect.value === '20') barWeight = 20;
+        else if (barSelect.value === '45-lb') barWeight = 45;
+        else barWeight = parseFloat(customBarInput.value);
+
+        if (Number.isNaN(target) || target <= 0) {
+          targetField.classList.add('has-error');
+          resultBox.hidden = true;
+          return;
+        }
+        if (Number.isNaN(barWeight) || barWeight < 0) {
+          resultBox.hidden = true;
+          return;
+        }
+
+        const checked = Array.from(
+          plateCheckboxes.querySelectorAll<HTMLInputElement>('input[type="checkbox"]:checked')
+        )
+          .map((el) => parseFloat(el.value))
+          .sort((a, b) => b - a);
+
+        const perSideTarget = (target - barWeight) / 2;
+
+        plateList.innerHTML = '';
+
+        if (perSideTarget <= 0 || checked.length === 0) {
+          headline.textContent =
+            perSideTarget <= 0
+              ? `Target weight is at or below the bar weight, no plates needed.`
+              : `No plates selected.`;
+          actualTotalRow.hidden = true;
+          resultBox.hidden = false;
+          return;
+        }
+
+        let remaining = perSideTarget;
+        const plateCounts: Record<string, number> = {};
+        checked.forEach((size) => {
+          const count = Math.floor(remaining / size + 1e-9);
+          if (count > 0) {
+            plateCounts[size] = count;
+            remaining -= count * size;
+          }
+        });
+
+        const usedSizes = Object.keys(plateCounts).map(Number).sort((a, b) => b - a);
+        if (usedSizes.length === 0) {
+          const li = document.createElement('li');
+          li.textContent = 'None (target too close to bar weight for available plates)';
+          plateList.appendChild(li);
+        } else {
+          usedSizes.forEach((size) => {
+            const li = document.createElement('li');
+            li.textContent = `${plateCounts[size]} x ${size} ${unit}`;
+            plateList.appendChild(li);
+          });
+        }
+
+        const actualPerSide = perSideTarget - remaining;
+        const actualTotal = barWeight + actualPerSide * 2;
+
+        headline.textContent = `Target: ${target} ${unit} (bar: ${barWeight} ${unit}, ${perSideTarget.toFixed(2)} ${unit} per side)`;
+        actualTotalEl.textContent = `${actualTotal.toFixed(2)} ${unit}`;
+        actualTotalRow.hidden = Math.abs(actualTotal - target) < 0.01;
+        resultBox.hidden = false;
+      });
+    </script>
+  </Fragment>
+
+  <Fragment slot="how-it-works">
+    <h2>How It Works</h2>
+    <p>
+      Loading a barbell means splitting the weight you want to add, beyond the bar itself, evenly
+      across both sides. The calculator first subtracts the bar weight from your target, then
+      divides what is left by two to get the weight needed per side.
+    </p>
+    <p>
+      From there it works like most lifters load a bar by hand: start with the biggest plate that
+      still fits under the per-side target, add it, subtract its weight from what is left, and
+      repeat with the next largest plate size down, continuing until the per-side target is
+      matched as closely as your available plates allow.
+    </p>
+    <h3>Worked Example</h3>
+    <p>
+      Target: 140 kg on a 20 kg bar, with 25, 20, 15, 10, 5, and 2.5 kg plates available. Weight
+      beyond the bar: 140 - 20 = 120 kg. Per side: 120 / 2 = 60 kg. Loading greedily: two 25 kg
+      plates use 50 kg and leave 10 kg, which one 10 kg plate covers exactly. Each side gets two
+      25 kg plates and one 10 kg plate, for a total of exactly 140 kg on the bar.
+    </p>
+  </Fragment>
+</ToolLayout>

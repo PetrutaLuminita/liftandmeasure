@@ -1,0 +1,28 @@
+---
+// Placeholder ad unit. The bordered "Advertisement" box only renders when
+// PUBLIC_SHOW_AD_PLACEHOLDERS=true, which is useful locally for layout and
+// design QA. Leave that flag unset (or false) in production so the site
+// looks fully finished instead of showing empty placeholder boxes before
+// AdSense is approved. Once approved, replace the HTML comment below with
+// the real AdSense <ins> ad unit code. Do not style this to look like
+// navigation, a button, or editorial content.
+const { position = '' } = Astro.props;
+const showPlaceholders = import.meta.env.PUBLIC_SHOW_AD_PLACEHOLDERS === 'true';
+---
+
+{showPlaceholders && (
+  <div class="ad-slot" data-ad-position={position}>
+    <div class="ad-label">Advertisement</div>
+    <div class="ad-placeholder">Ad space</div>
+  </div>
+)}
+<!--
+  Real AdSense unit goes here, e.g.:
+  <ins class="adsbygoogle"
+       style="display:block"
+       data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+       data-ad-slot="XXXXXXXXXX"
+       data-ad-format="auto"
+       data-full-width-responsive="true"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+-->

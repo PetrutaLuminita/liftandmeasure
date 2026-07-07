@@ -1,0 +1,46 @@
+---
+// Simple consent banner. Shows once, remembers the choice in localStorage.
+//
+// AdSense requires a certified consent management platform (CMP) for
+// EEA/UK visitors. Do not build a custom IAB TCF signal here. Instead,
+// once approved, insert Google's Funding Choices script tag in
+// BaseLayout.astro's <head> (see comment below) and it will handle the
+// certified consent UI itself. This banner is a lightweight fallback /
+// placeholder until that script is wired in.
+//
+// Funding Choices integration point (add to BaseLayout.astro <head>):
+// <script async src="https://fundingchoicesmessages.google.com/i/YOUR_PUB_ID?ers=1"></script>
+// <script>(function() {function signalGooglefcPresent() {if (!window.frames['googlefcPresent']) {if (document.body) {const iframe = document.createElement('iframe'); iframe.style = 'width:0;height:0;border:none;z-index:-1000;left:-1000px;top:-1000px;'; iframe.style.display = 'none'; iframe.name = 'googlefcPresent'; document.body.appendChild(iframe);} else {setTimeout(signalGooglefcPresent, 0);}}} signalGooglefcPresent();})();</script>
+---
+
+<div class="cookie-banner" id="cookie-banner" hidden>
+  <div class="cookie-banner-inner">
+    <p>
+      We use cookies to run this site and keep it free.
+      <a href="/privacy-policy">Privacy Policy</a>
+    </p>
+    <div class="cookie-banner-actions">
+      <button class="btn btn-secondary" id="cookie-decline" type="button">Decline</button>
+      <button class="btn" id="cookie-accept" type="button">Accept</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'lam-cookie-consent';
+  const banner = document.getElementById('cookie-banner');
+  const acceptBtn = document.getElementById('cookie-accept');
+  const declineBtn = document.getElementById('cookie-decline');
+
+  if (banner && !localStorage.getItem(STORAGE_KEY)) {
+    banner.hidden = false;
+  }
+
+  function setConsent(value) {
+    localStorage.setItem(STORAGE_KEY, value);
+    if (banner) banner.hidden = true;
+  }
+
+  acceptBtn?.addEventListener('click', () => setConsent('accepted'));
+  declineBtn?.addEventListener('click', () => setConsent('declined'));
+</script>

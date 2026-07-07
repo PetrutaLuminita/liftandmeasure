@@ -1,0 +1,247 @@
+---
+import ToolLayout from '../layouts/ToolLayout.astro';
+
+const title = 'Macro Calculator | Lift and Measure';
+const description =
+  'Get a daily protein, fat, and carbohydrate target in grams based on your calorie goal, body weight, and activity level.';
+const summary =
+  'Enter your stats, activity level, and goal to get a daily calorie target split into protein, fat, and carbohydrate grams, built on top of your estimated TDEE.';
+
+const faq = [
+  {
+    question: 'How is my calorie target calculated before the macro split?',
+    answer:
+      'The calculator first estimates your BMR with the Mifflin-St Jeor equation, multiplies it by an activity factor to get your TDEE, then adjusts that number based on your goal: about a 20 percent deficit for weight loss, no change for maintenance, or about a 10 to 15 percent surplus for weight gain.',
+  },
+  {
+    question: 'Why does protein come first in the split?',
+    answer:
+      'Protein needs are best set relative to body weight rather than as a percentage of calories, since protein requirements for preserving or building muscle do not scale down just because someone is eating fewer total calories.',
+  },
+  {
+    question: 'What protein target does this use by default?',
+    answer:
+      'It defaults to 1.8 grams per kilogram of body weight, inside the commonly cited range of 1.6 to 2.2 grams per kilogram for people who train regularly. You can enter your own value in that field if you want a different target.',
+  },
+  {
+    question: 'How is fat calculated?',
+    answer:
+      'Fat is set at roughly 27 percent of total daily calories, within the commonly used 25 to 30 percent range, then converted to grams using 9 calories per gram of fat.',
+  },
+  {
+    question: 'What happens to the remaining calories?',
+    answer:
+      'Whatever calories are left after protein and fat are assigned go to carbohydrates, converted to grams using 4 calories per gram. Carbohydrates act as the flexible remainder in this split.',
+  },
+  {
+    question: 'Should I follow these numbers exactly every day?',
+    answer:
+      'Treat them as a starting target rather than a strict rule. Hitting your numbers within a reasonably close range on most days matters more than perfect precision on any single day.',
+  },
+];
+---
+
+<ToolLayout title={title} description={description} slug="macro-calculator" summary={summary} faq={faq}>
+  <Fragment slot="tool">
+    <form class="calc-box" id="macro-form" novalidate>
+      <div class="field-row">
+        <div class="field" id="sex-field">
+          <label for="sex-select">Sex</label>
+          <select id="sex-select" name="sex">
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </div>
+        <div class="field" id="age-field">
+          <label for="age-input">Age (years)</label>
+          <input type="number" id="age-input" name="age" min="15" max="100" step="1" required />
+          <span class="error-msg" id="age-error">Enter an age between 15 and 100.</span>
+        </div>
+        <div class="field" id="unit-field">
+          <label for="unit-select">Units</label>
+          <select id="unit-select" name="unit">
+            <option value="metric">Metric (kg, cm)</option>
+            <option value="imperial">Imperial (lb, in)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field" id="weight-field">
+          <label for="weight-input" id="weight-label">Weight (kg)</label>
+          <input type="number" id="weight-input" name="weight" min="0" step="0.1" required />
+          <span class="error-msg" id="weight-error">Enter a weight greater than 0.</span>
+        </div>
+        <div class="field" id="height-field">
+          <label for="height-input" id="height-label">Height (cm)</label>
+          <input type="number" id="height-input" name="height" min="0" step="0.1" required />
+          <span class="error-msg" id="height-error">Enter a height greater than 0.</span>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field" id="activity-field">
+          <label for="activity-select">Activity level</label>
+          <select id="activity-select" name="activity">
+            <option value="1.2">Sedentary</option>
+            <option value="1.375">Lightly active</option>
+            <option value="1.55" selected>Moderately active</option>
+            <option value="1.725">Very active</option>
+            <option value="1.9">Extra active</option>
+          </select>
+        </div>
+        <div class="field" id="goal-field">
+          <label for="goal-select">Goal</label>
+          <select id="goal-select" name="goal">
+            <option value="lose">Lose weight</option>
+            <option value="maintain" selected>Maintain</option>
+            <option value="gain">Gain weight</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:16px; max-width:260px;">
+        <label for="protein-input">Protein target (g per kg body weight)</label>
+        <input type="number" id="protein-input" name="protein" min="1.6" max="2.2" step="0.1" value="1.8" />
+      </div>
+
+      <button type="submit" class="btn">Calculate macros</button>
+    </form>
+
+    <div class="result-box" id="result-box" hidden>
+      <div class="result-headline" id="result-headline"></div>
+      <div class="result-row">
+        <span>Daily calories</span>
+        <span class="value" id="result-calories"></span>
+      </div>
+      <div class="result-row">
+        <span>Protein</span>
+        <span class="value" id="result-protein"></span>
+      </div>
+      <div class="result-row">
+        <span>Fat</span>
+        <span class="value" id="result-fat"></span>
+      </div>
+      <div class="result-row">
+        <span>Carbohydrates</span>
+        <span class="value" id="result-carbs"></span>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById('macro-form') as HTMLFormElement;
+      const sexSelect = document.getElementById('sex-select') as HTMLSelectElement;
+      const ageInput = document.getElementById('age-input') as HTMLInputElement;
+      const ageField = document.getElementById('age-field') as HTMLElement;
+      const unitSelect = document.getElementById('unit-select') as HTMLSelectElement;
+      const weightInput = document.getElementById('weight-input') as HTMLInputElement;
+      const weightField = document.getElementById('weight-field') as HTMLElement;
+      const weightLabel = document.getElementById('weight-label') as HTMLElement;
+      const heightInput = document.getElementById('height-input') as HTMLInputElement;
+      const heightField = document.getElementById('height-field') as HTMLElement;
+      const heightLabel = document.getElementById('height-label') as HTMLElement;
+      const activitySelect = document.getElementById('activity-select') as HTMLSelectElement;
+      const goalSelect = document.getElementById('goal-select') as HTMLSelectElement;
+      const proteinInput = document.getElementById('protein-input') as HTMLInputElement;
+      const resultBox = document.getElementById('result-box') as HTMLElement;
+      const headline = document.getElementById('result-headline') as HTMLElement;
+      const caloriesEl = document.getElementById('result-calories') as HTMLElement;
+      const proteinEl = document.getElementById('result-protein') as HTMLElement;
+      const fatEl = document.getElementById('result-fat') as HTMLElement;
+      const carbsEl = document.getElementById('result-carbs') as HTMLElement;
+
+      const FAT_PERCENT = 0.27;
+
+      unitSelect.addEventListener('change', () => {
+        const metric = unitSelect.value === 'metric';
+        weightLabel.textContent = metric ? 'Weight (kg)' : 'Weight (lb)';
+        heightLabel.textContent = metric ? 'Height (cm)' : 'Height (in)';
+      });
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        ageField.classList.remove('has-error');
+        weightField.classList.remove('has-error');
+        heightField.classList.remove('has-error');
+
+        const age = parseInt(ageInput.value, 10);
+        let weight = parseFloat(weightInput.value);
+        let height = parseFloat(heightInput.value);
+        const metric = unitSelect.value === 'metric';
+        let hasError = false;
+
+        if (Number.isNaN(age) || age < 15 || age > 100) {
+          ageField.classList.add('has-error');
+          hasError = true;
+        }
+        if (Number.isNaN(weight) || weight <= 0) {
+          weightField.classList.add('has-error');
+          hasError = true;
+        }
+        if (Number.isNaN(height) || height <= 0) {
+          heightField.classList.add('has-error');
+          hasError = true;
+        }
+        if (hasError) {
+          resultBox.hidden = true;
+          return;
+        }
+
+        const weightKg = metric ? weight : weight * 0.45359237;
+        const heightCm = metric ? height : height * 2.54;
+
+        const activityFactor = parseFloat(activitySelect.value);
+        const sexOffset = sexSelect.value === 'male' ? 5 : -161;
+        const bmr = 10 * weightKg + 6.25 * heightCm - 5 * age + sexOffset;
+        const tdee = bmr * activityFactor;
+
+        let calorieTarget = tdee;
+        if (goalSelect.value === 'lose') calorieTarget = tdee * 0.8;
+        else if (goalSelect.value === 'gain') calorieTarget = tdee * 1.125;
+
+        const proteinPerKg = parseFloat(proteinInput.value) || 1.8;
+        const proteinGrams = proteinPerKg * weightKg;
+        const proteinCalories = proteinGrams * 4;
+
+        const fatCalories = calorieTarget * FAT_PERCENT;
+        const fatGrams = fatCalories / 9;
+
+        const carbCalories = Math.max(0, calorieTarget - proteinCalories - fatCalories);
+        const carbGrams = carbCalories / 4;
+
+        const goalLabel =
+          goalSelect.value === 'lose' ? 'weight loss' : goalSelect.value === 'gain' ? 'weight gain' : 'maintenance';
+
+        headline.textContent = `Daily target for ${goalLabel}`;
+        caloriesEl.textContent = `${Math.round(calorieTarget)} calories`;
+        proteinEl.textContent = `${Math.round(proteinGrams)} g`;
+        fatEl.textContent = `${Math.round(fatGrams)} g`;
+        carbsEl.textContent = `${Math.round(carbGrams)} g`;
+        resultBox.hidden = false;
+      });
+    </script>
+  </Fragment>
+
+  <Fragment slot="how-it-works">
+    <h2>How It Works</h2>
+    <p>
+      The calculator first estimates your total daily energy expenditure (TDEE) using the
+      Mifflin-St Jeor equation for BMR, multiplied by an activity factor. It then adjusts that
+      number for your goal: about 20 percent below TDEE for weight loss, unchanged for
+      maintenance, or about 12.5 percent above TDEE for weight gain.
+    </p>
+    <p>
+      From that calorie target, protein is set first using your chosen grams per kilogram of
+      body weight (1.8 g/kg by default). Fat is set at 27 percent of total calories. Whatever
+      calories remain become carbohydrates. Protein and carbohydrates provide 4 calories per
+      gram, fat provides 9 calories per gram.
+    </p>
+    <h3>Worked Example</h3>
+    <p>
+      A 75 kg moderately active man aiming to maintain weight, with a TDEE of about 2700 calories
+      and the default 1.8 g/kg protein target: protein = 1.8 x 75 = 135 g (540 calories). Fat = 27
+      percent of 2700 = 729 calories, or 81 g. Remaining calories for carbs: 2700 - 540 - 729 =
+      1431 calories, or about 358 g of carbohydrates.
+    </p>
+  </Fragment>
+</ToolLayout>

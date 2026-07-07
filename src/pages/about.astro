@@ -1,0 +1,59 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const title = 'About | Lift and Measure';
+const description =
+  'Learn what Lift and Measure is, who runs it, and why it exists: free, fast, no sign-up fitness calculators.';
+const path = '/about';
+
+const schema = {
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://liftandmeasure.com' },
+    { '@type': 'ListItem', position: 2, name: 'About', item: 'https://liftandmeasure.com/about' },
+  ],
+};
+---
+
+<BaseLayout title={title} description={description} path={path} schema={schema}>
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a>
+    <span class="sep">&gt;</span>
+    <span aria-current="page">About</span>
+  </nav>
+
+  <h1>About Lift and Measure</h1>
+
+  <p>
+    Lift and Measure is a small, independently run site with one job: give lifters and runners a
+    fast, accurate answer to a training or body composition question without making them sign up,
+    install anything, or dig through a cluttered page to find it.
+  </p>
+  <p>
+    It was built because so many fitness calculator sites bury a simple tool under walls of ads,
+    autoplay video, and pop-ups before you can even see the input field. Every tool here loads
+    quickly, works on a phone as well as a desktop, and explains the formula behind the answer in
+    plain language, so you can check the math yourself or learn something along the way.
+  </p>
+  <p>
+    The site covers ten tools split into two groups: body and composition (body fat, lean body
+    mass, macros, TDEE and BMR, and calories burned) and performance and training (one-rep max,
+    plate loading, running pace, heart rate zones, and Wilks score). All of them run directly in
+    your browser. No data you enter is sent to a server or stored anywhere.
+  </p>
+  <p>
+    Every formula used on this site is a standard, published method, such as the Mifflin-St Jeor
+    equation, the US Navy body fat method, the Boer lean body mass formula, and the original 1994
+    Wilks coefficient formula. None of these tools are a substitute for medical advice, and the
+    Terms of Use page has more detail on that.
+  </p>
+  <p>
+    The site is supported by display advertising, which is what keeps every tool free to use and
+    free of accounts. You can read more about how that works in the
+    <a href="/privacy-policy">Privacy Policy</a>.
+  </p>
+  <p>
+    Found an error in a formula or a reference value, or have an idea for a tool that should be
+    added? Get in touch on the <a href="/contact">Contact</a> page.
+  </p>
+</BaseLayout>

@@ -1,0 +1,178 @@
+---
+import ToolLayout from '../layouts/ToolLayout.astro';
+
+const title = '1RM Calculator | Lift and Measure';
+const description =
+  'Estimate your one-rep max from a weight and rep count using the Epley and Brzycki formulas, plus a training percentage table.';
+const summary =
+  'Enter the weight you lifted and how many reps you completed to get an estimated one-rep max from two standard formulas, along with a percentage table for programming training loads.';
+
+const faq = [
+  {
+    question: 'How accurate is an estimated 1RM?',
+    answer:
+      'Formula-based estimates are typically within about 5 percent of a true tested max. They are most accurate for sets of 1 to 5 reps and get less reliable as rep count climbs, since fatigue affects lifters differently at higher reps.',
+  },
+  {
+    question: 'Why do the Epley and Brzycki formulas give different numbers?',
+    answer:
+      'Both are regression equations built from different sets of lifting data, so they weight the relationship between reps and fatigue slightly differently. The gap between them tends to grow at higher rep counts and stay small at low rep counts.',
+  },
+  {
+    question: 'Which formula should I trust more?',
+    answer:
+      'Neither is definitively more correct. Brzycki tends to produce a slightly more conservative number as reps increase, while Epley tends to run a little higher. Many lifters just look at both and treat the true value as somewhere in that range.',
+  },
+  {
+    question: 'What is the training percentage table for?',
+    answer:
+      'Strength programs are often written as a percentage of your 1RM, for example 5 sets of 5 at 80 percent. Once you have an estimated 1RM, the percentage table converts that into an actual weight to load on the bar for a given percentage.',
+  },
+  {
+    question: 'Does this work for any exercise?',
+    answer:
+      'It works best for compound barbell lifts like the squat, bench press, deadlift, and overhead press, where the reps-to-fatigue relationship is fairly linear. It is less reliable for isolation exercises or machines.',
+  },
+  {
+    question: 'Should I just test my true 1-rep max instead?',
+    answer:
+      'A true max attempt carries more injury risk and requires a spotter, a lot of warm-up sets, and a good day. Estimating from a submaximal set you can perform safely is a practical alternative for most training purposes.',
+  },
+];
+---
+
+<ToolLayout title={title} description={description} slug="one-rep-max-calculator" summary={summary} faq={faq}>
+  <Fragment slot="tool">
+    <form class="calc-box" id="orm-form" novalidate>
+      <div class="field-row">
+        <div class="field" id="weight-field">
+          <label for="weight-input">Weight lifted</label>
+          <input type="number" id="weight-input" name="weight" min="0" step="0.5" required />
+          <span class="error-msg" id="weight-error">Enter a weight greater than 0.</span>
+        </div>
+        <div class="field" id="unit-field">
+          <label for="unit-select">Unit</label>
+          <select id="unit-select" name="unit">
+            <option value="lb">lb</option>
+            <option value="kg">kg</option>
+          </select>
+        </div>
+        <div class="field" id="reps-field">
+          <label for="reps-input">Reps performed</label>
+          <input type="number" id="reps-input" name="reps" min="1" max="12" step="1" value="5" required />
+          <span class="error-msg" id="reps-error">Enter a rep count between 1 and 12 for a reliable estimate.</span>
+        </div>
+      </div>
+
+      <button type="submit" class="btn">Calculate 1RM</button>
+    </form>
+
+    <div class="result-box" id="result-box" hidden>
+      <div class="result-headline" id="result-headline"></div>
+      <div class="result-row">
+        <span>Epley estimate</span>
+        <span class="value" id="result-epley"></span>
+      </div>
+      <div class="result-row">
+        <span>Brzycki estimate</span>
+        <span class="value" id="result-brzycki"></span>
+      </div>
+
+      <h3>Training Percentages (based on Epley estimate)</h3>
+      <div class="table-scroll">
+        <table id="pct-table">
+          <thead>
+            <tr><th>Percent of 1RM</th><th>Weight</th></tr>
+          </thead>
+          <tbody id="pct-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById('orm-form') as HTMLFormElement;
+      const weightInput = document.getElementById('weight-input') as HTMLInputElement;
+      const weightField = document.getElementById('weight-field') as HTMLElement;
+      const unitSelect = document.getElementById('unit-select') as HTMLSelectElement;
+      const repsInput = document.getElementById('reps-input') as HTMLInputElement;
+      const repsField = document.getElementById('reps-field') as HTMLElement;
+      const resultBox = document.getElementById('result-box') as HTMLElement;
+      const headline = document.getElementById('result-headline') as HTMLElement;
+      const epleyEl = document.getElementById('result-epley') as HTMLElement;
+      const brzyckiEl = document.getElementById('result-brzycki') as HTMLElement;
+      const pctBody = document.getElementById('pct-table-body') as HTMLElement;
+
+      const PERCENTAGES = [95, 90, 85, 80, 75, 70, 65, 60];
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        weightField.classList.remove('has-error');
+        repsField.classList.remove('has-error');
+
+        const weight = parseFloat(weightInput.value);
+        const reps = parseInt(repsInput.value, 10);
+        const unit = unitSelect.value;
+        let hasError = false;
+
+        if (Number.isNaN(weight) || weight <= 0) {
+          weightField.classList.add('has-error');
+          hasError = true;
+        }
+        if (Number.isNaN(reps) || reps < 1 || reps > 12) {
+          repsField.classList.add('has-error');
+          hasError = true;
+        }
+        if (hasError) {
+          resultBox.hidden = true;
+          return;
+        }
+
+        const epley = weight * (1 + reps / 30);
+        const brzycki = (weight * 36) / (37 - reps);
+
+        headline.textContent = `Estimated 1RM from ${weight}${unit} x ${reps} reps`;
+        epleyEl.textContent = `${epley.toFixed(1)} ${unit}`;
+        brzyckiEl.textContent = `${brzycki.toFixed(1)} ${unit}`;
+
+        pctBody.innerHTML = '';
+        PERCENTAGES.forEach((pct) => {
+          const row = document.createElement('tr');
+          const pctCell = document.createElement('td');
+          pctCell.textContent = `${pct}%`;
+          const valCell = document.createElement('td');
+          valCell.textContent = `${((epley * pct) / 100).toFixed(1)} ${unit}`;
+          row.appendChild(pctCell);
+          row.appendChild(valCell);
+          pctBody.appendChild(row);
+        });
+
+        resultBox.hidden = false;
+      });
+    </script>
+  </Fragment>
+
+  <Fragment slot="how-it-works">
+    <h2>How It Works</h2>
+    <p>
+      A one-rep max (1RM) is the heaviest weight you could lift for a single complete rep. Since
+      testing that directly is fatiguing and carries some injury risk, lifters instead perform a
+      set of a few reps with good form and plug the weight and rep count into a formula that
+      estimates the 1RM from the relationship between reps and fatigue.
+    </p>
+    <p>
+      This calculator shows two widely used formulas. The Epley formula is
+      <code>1RM = weight x (1 + reps / 30)</code>. The Brzycki formula is
+      <code>1RM = weight x 36 / (37 - reps)</code>. Both formulas assume the set was taken close
+      to failure with good technique. A rep count that is far from failure will overestimate the
+      true max.
+    </p>
+    <h3>Worked Example</h3>
+    <p>
+      Say you bench pressed 185 lb for 8 reps. Epley: 185 x (1 + 8 / 30) = 185 x 1.267 = 234.3 lb.
+      Brzycki: 185 x 36 / (37 - 8) = 185 x 36 / 29 = 229.7 lb. The two estimates land within about
+      5 lb of each other, which is typical. From there, the percentage table shows what 80 percent
+      of that estimated max looks like for planning a training block, for example 80 percent of
+      234.3 lb is about 187.4 lb.
+    </p>
+  </Fragment>
+</ToolLayout>
