@@ -1,5 +1,6 @@
 ---
 import ToolLayout from '../layouts/ToolLayout.astro';
+import InfoTooltip from '../components/InfoTooltip.astro';
 
 const title = 'TDEE and BMR Calculator | Lift and Measure';
 const description =
@@ -80,7 +81,15 @@ const faq = [
       </div>
 
       <div class="field" style="margin-bottom:16px;">
-        <label for="activity-select">Activity level</label>
+        <span class="field-label-row">
+          <label for="activity-select">Activity level</label>
+          <InfoTooltip id="activity-hint-tdee">
+            Count structured exercise only, like gym sessions, sports, or running. A busy desk job
+            with no regular workouts still counts as sedentary. When unsure, pick the lower
+            option, overestimating activity is the most common reason a calorie target ends up
+            too high.
+          </InfoTooltip>
+        </span>
         <select id="activity-select" name="activity">
           <option value="1.2">Sedentary (little or no exercise)</option>
           <option value="1.375">Lightly active (1 to 3 days a week)</option>
@@ -88,12 +97,6 @@ const faq = [
           <option value="1.725">Very active (6 to 7 days a week)</option>
           <option value="1.9">Extra active (hard exercise and physical job)</option>
         </select>
-        <p class="field-hint">
-          Count structured exercise only, like gym sessions, sports, or running. A desk job with
-          no regular workouts is sedentary even if the day feels busy. When unsure, pick the lower
-          option, since overestimating activity is the most common reason a calorie target ends up
-          too high.
-        </p>
       </div>
 
       <button type="submit" class="btn">Calculate BMR and TDEE</button>

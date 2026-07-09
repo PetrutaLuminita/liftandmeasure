@@ -1,5 +1,6 @@
 ---
 import ToolLayout from '../layouts/ToolLayout.astro';
+import InfoTooltip from '../components/InfoTooltip.astro';
 
 const title = 'Macro Calculator | Lift and Measure';
 const description =
@@ -81,7 +82,15 @@ const faq = [
 
       <div class="field-row">
         <div class="field" id="activity-field">
-          <label for="activity-select">Activity level</label>
+          <span class="field-label-row">
+            <label for="activity-select">Activity level</label>
+            <InfoTooltip id="activity-hint-macro">
+              Count structured exercise only, like gym sessions, sports, or running. A busy desk
+              job with no regular workouts still counts as sedentary. When in doubt, pick the
+              lower option, it's easier to eat a bit more later than to correct an overshot
+              calorie target.
+            </InfoTooltip>
+          </span>
           <select id="activity-select" name="activity">
             <option value="1.2">Sedentary (little or no exercise)</option>
             <option value="1.375">Lightly active (1 to 3 days a week)</option>
@@ -89,12 +98,6 @@ const faq = [
             <option value="1.725">Very active (6 to 7 days a week)</option>
             <option value="1.9">Extra active (hard exercise and physical job)</option>
           </select>
-          <p class="field-hint">
-            Count structured exercise only, like gym sessions, sports, or running. A desk job with
-            no regular workouts is sedentary even if the day feels busy. When in doubt, pick the
-            lower option, since it is easier to eat a bit more later than to correct an overshot
-            calorie target.
-          </p>
         </div>
         <div class="field" id="goal-field">
           <label for="goal-select">Goal</label>
@@ -107,17 +110,19 @@ const faq = [
       </div>
 
       <div class="field" style="margin-bottom:16px; max-width:320px;">
-        <label for="protein-input">Protein target (g per kg body weight)</label>
+        <span class="field-label-row">
+          <label for="protein-input">Protein target (g per kg body weight)</label>
+          <InfoTooltip id="protein-hint-macro">
+            This field is editable. 1.6 g/kg suits beginners and general fitness, 1.8 to 2.0 g/kg
+            suits regular strength training, and 2.0 to 2.2 g/kg suits more advanced or physique
+            focused training. It's based on total body weight, which can overshoot what someone
+            carrying significantly more body fat actually needs, since protein needs track lean
+            tissue, not fat. If that's you, try the
+            <a href="/lean-body-mass-calculator">Lean Body Mass Calculator</a> and base this
+            target on your lean mass figure instead.
+          </InfoTooltip>
+        </span>
         <input type="number" id="protein-input" name="protein" min="1.6" max="2.2" step="0.1" value="1.8" />
-        <p class="field-hint">
-          This field is editable. 1.6 g/kg suits general fitness and beginners, 1.8 to 2.0 g/kg
-          suits regular strength training, and 2.0 to 2.2 g/kg suits more advanced or physique
-          focused training. This target is based on total body weight, which works well close to
-          a typical build, but it can overshoot what's actually needed for someone carrying
-          significantly more body fat, since protein needs track lean tissue, not fat. If that
-          applies to you, try the <a href="/lean-body-mass-calculator">Lean Body Mass Calculator</a>
-          first and base your protein target on that lean mass figure instead of total weight.
-        </p>
       </div>
 
       <button type="submit" class="btn">Calculate macros</button>

@@ -1,0 +1,44 @@
+---
+// Small "?" button that reveals a short popover of help text on click,
+// instead of a paragraph sitting permanently under a field. Keyboard
+// accessible: focusable button, Escape closes, click outside closes.
+// Usage: <InfoTooltip id="unique-id">Help text, can include links.</InfoTooltip>
+const { id } = Astro.props;
+---
+
+<span class="info-tooltip">
+  <button type="button" class="info-btn" aria-expanded="false" aria-describedby={id} id={`${id}-btn`}>
+    <span aria-hidden="true">?</span>
+    <span class="sr-only">More information</span>
+  </button>
+  <span class="info-popover" id={id} role="tooltip" hidden>
+    <slot />
+  </span>
+</span>
+
+<script>
+  function closePopover(popover: HTMLElement) {
+    popover.hidden = true;
+    document.getElementById(`${popover.id}-btn`)?.setAttribute('aria-expanded', 'false');
+  }
+
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    const btn = target.closest('.info-btn') as HTMLElement | null;
+
+    document.querySelectorAll<HTMLElement>('.info-popover').forEach((popover) => {
+      if (btn && btn.getAttribute('aria-describedby') === popover.id) {
+        const willShow = popover.hidden;
+        popover.hidden = !willShow;
+        btn.setAttribute('aria-expanded', String(willShow));
+      } else if (!popover.contains(target) && target !== popover) {
+        closePopover(popover);
+      }
+    });
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    document.querySelectorAll<HTMLElement>('.info-popover:not([hidden])').forEach(closePopover);
+  });
+</script>
