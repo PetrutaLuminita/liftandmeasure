@@ -16,12 +16,12 @@ const faq = [
   {
     question: 'Why do the Epley and Brzycki formulas give different numbers?',
     answer:
-      'Both are regression equations built from different sets of lifting data, so they weight the relationship between reps and fatigue slightly differently. The gap between them tends to grow at higher rep counts and stay small at low rep counts.',
+      'Both are regression equations built from different sets of lifting data, so they weight the relationship between reps and fatigue slightly differently. They actually land almost exactly on top of each other around 10 reps, run a few percent apart at lower rep counts, and then pull apart quickly past 10 reps. The How It Works section below has the numbers behind this.',
   },
   {
     question: 'Which formula should I trust more?',
     answer:
-      'Neither is definitively more correct. Brzycki tends to produce a slightly more conservative number as reps increase, while Epley tends to run a little higher. Many lifters just look at both and treat the true value as somewhere in that range.',
+      'Neither is definitively more correct. Below about 10 reps, Epley tends to run a little higher than Brzycki. Past about 10 reps, that flips, and Brzycki starts running noticeably higher than Epley. Many lifters just look at both and treat the true value as somewhere in that range, and lean on lower rep sets for a more trustworthy estimate.',
   },
   {
     question: 'What is the training percentage table for?',
@@ -173,6 +173,28 @@ const faq = [
       5 lb of each other, which is typical. From there, the percentage table shows what 80 percent
       of that estimated max looks like for planning a training block, for example 80 percent of
       234.3 lb is about 187.4 lb.
+    </p>
+
+    <h3>Where the Two Formulas Pull Apart</h3>
+    <p>
+      Epley and Brzycki agree almost exactly right around 10 reps, both landing on a multiplier of
+      1.333 times the weight lifted. Below 10 reps, Epley runs a little higher, by roughly 2 to 4
+      percent in the 3 to 8 rep range. Past 10 reps, that flips: Brzycki starts climbing faster
+      than Epley and pulls further ahead the higher the rep count goes. At 12 reps, Epley gives a
+      multiplier of 1.40 while Brzycki has already climbed to 1.44, a gap of about 3 percent. Keep
+      extending that out and it gets worse fast: Brzycki's formula has 37 minus reps in the
+      denominator, so as reps climbs toward 37 that denominator shrinks toward zero and the
+      estimate shoots toward infinity. Epley has no such cliff and just keeps growing in a
+      straight line, which is part of why the two formulas end up so far apart at higher reps.
+    </p>
+    <p>
+      This mathematical quirk lines up with a real physiological one: the relationship between
+      reps performed and percentage of your true max gets a lot less consistent from person to
+      person once you go much past about 10 reps. Fatigue, technique breakdown, and cardiovascular
+      limits start to matter as much as raw strength, and those vary too much between individuals
+      for any single formula to model reliably. That is why this calculator caps input at 12
+      reps, and why a set of 3 to 6 reps will generally give you a more trustworthy estimate than
+      a set of 12.
     </p>
   </Fragment>
 </ToolLayout>

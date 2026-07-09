@@ -1,5 +1,7 @@
 ---
-// Simple consent banner. Shows once, remembers the choice in localStorage.
+// Consent banner with a real choice, not just a notice. Nothing ad-related
+// loads until the visitor clicks Accept, and the site works fully either
+// way, since no tool on this site depends on ads to function.
 //
 // AdSense requires a certified consent management platform (CMP) for
 // EEA/UK visitors. Do not build a custom IAB TCF signal here. Instead,
@@ -20,7 +22,7 @@
       <a href="/privacy-policy">Privacy Policy</a>
     </p>
     <div class="cookie-banner-actions">
-      <button class="btn btn-secondary" id="cookie-decline" type="button">Decline</button>
+      <button class="btn btn-secondary" id="cookie-reject" type="button">Reject</button>
       <button class="btn" id="cookie-accept" type="button">Accept</button>
     </div>
   </div>
@@ -30,17 +32,43 @@
   const STORAGE_KEY = 'lam-cookie-consent';
   const banner = document.getElementById('cookie-banner');
   const acceptBtn = document.getElementById('cookie-accept');
-  const declineBtn = document.getElementById('cookie-decline');
+  const rejectBtn = document.getElementById('cookie-reject');
 
-  if (banner && !localStorage.getItem(STORAGE_KEY)) {
-    banner.hidden = false;
+  // Ad scripts and ad-related cookies must only load from inside this
+  // function, and this function must only ever run after Accept, either
+  // just now or on a previous visit. Nothing elsewhere on the site should
+  // load ad scripts unconditionally.
+  function enableAds() {
+    window.lamAdsConsent = 'accepted';
+    window.dispatchEvent(new Event('lam:ads-enabled'));
+
+    // AdSense loader integration point, once approved. Uncomment and fill
+    // in the real publisher ID. Leave this commented out (and Funding
+    // Choices wired in above) until then, so no ad request or ad cookie
+    // is ever set before a visitor has actually accepted:
+    //
+    // const s = document.createElement('script');
+    // s.async = true;
+    // s.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX';
+    // s.crossOrigin = 'anonymous';
+    // document.head.appendChild(s);
   }
 
-  function setConsent(value) {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored === 'accepted') {
+    enableAds();
+  } else if (!stored && banner) {
+    banner.hidden = false;
+  }
+  // stored === 'rejected': leave ads off, banner hidden, nothing else to do.
+  // Every calculator on this site works the same whether ads are on or off.
+
+  function setConsent(value: 'accepted' | 'rejected') {
     localStorage.setItem(STORAGE_KEY, value);
     if (banner) banner.hidden = true;
+    if (value === 'accepted') enableAds();
   }
 
   acceptBtn?.addEventListener('click', () => setConsent('accepted'));
-  declineBtn?.addEventListener('click', () => setConsent('declined'));
+  rejectBtn?.addEventListener('click', () => setConsent('rejected'));
 </script>

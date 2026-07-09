@@ -17,12 +17,26 @@ const showPlaceholders = import.meta.env.PUBLIC_SHOW_AD_PLACEHOLDERS === 'true';
   </div>
 )}
 <!--
-  Real AdSense unit goes here, e.g.:
+  Real AdSense unit goes here. This must stay gated behind cookie consent:
+  the AdSense loader script only exists once CookieConsent.astro's
+  enableAds() has run (see that file), which only happens after Accept.
+  Push the ad request immediately if consent was already granted this
+  session, otherwise wait for the 'lam:ads-enabled' event it fires. Do
+  not push unconditionally on page load.
+
   <ins class="adsbygoogle"
        style="display:block"
        data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
        data-ad-slot="XXXXXXXXXX"
        data-ad-format="auto"
        data-full-width-responsive="true"></ins>
-  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  <script>
+    if (window.lamAdsConsent === 'accepted') {
+      (adsbygoogle = window.adsbygoogle || []).push({});
+    } else {
+      window.addEventListener('lam:ads-enabled', () => {
+        (adsbygoogle = window.adsbygoogle || []).push({});
+      }, { once: true });
+    }
+  </script>
 -->
