@@ -138,17 +138,24 @@ code {
 
 .main-nav .nav-group {
   position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .main-nav .nav-label {
+  display: inline-flex;
+  align-items: center;
   font-weight: 600;
   font-size: 0.95rem;
+  line-height: 1.25;
   cursor: pointer;
   background: none;
   border: none;
   font-family: inherit;
   color: var(--color-text);
   padding: 8px 0;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 .main-nav .nav-dropdown {
@@ -497,6 +504,18 @@ code {
   border-color: var(--color-accent);
 }
 
+.quick-tips button[aria-pressed="true"]:hover {
+  background: var(--color-accent-dark);
+  color: var(--color-accent-contrast);
+  border-color: var(--color-accent-dark);
+}
+
+.field-hint {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin: 4px 0 0;
+}
+
 .result-box {
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius);
@@ -670,6 +689,12 @@ code {
   background: var(--color-accent);
   color: var(--color-accent-contrast);
   border-color: var(--color-accent);
+}
+
+.mode-tabs button[aria-pressed="true"]:hover {
+  background: var(--color-accent-dark);
+  color: var(--color-accent-contrast);
+  border-color: var(--color-accent-dark);
 }
 
 /* Plate diagram list (plate loading calculator) */
