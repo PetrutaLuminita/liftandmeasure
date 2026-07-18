@@ -3,6 +3,17 @@
   "trailingSlash": false,
   "redirects": [
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.liftandmeasure.com"
+        }
+      ],
+      "destination": "https://liftandmeasure.com/",
+      "statusCode": 301
+    },
+    {
       "source": "/:path*",
       "has": [
         {
